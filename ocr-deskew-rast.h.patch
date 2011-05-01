@@ -1,0 +1,4 @@
+39c39
+<             max_n.bind(this,"max_n",10000,"maximum number of character boxes for deskewing");
+---
+>             max_n.bind(this,"max_n",100000,"maximum number of character boxes for deskewing");

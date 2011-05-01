@@ -1,0 +1,4 @@
+54c54
+<         int MAX_COLS = 30;
+---
+>         int MAX_COLS = 100;

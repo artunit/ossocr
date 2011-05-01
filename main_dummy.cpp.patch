@@ -1,0 +1,44 @@
+17a18
+> #include "ctype.h"
+23a25,27
+> #define BUF_LEN 250    //length of buffer for sorting out result coordinates
+> #define COORD_LEN 50   //limit for coordinate lines, anything beyond this is probably bogue
+> 
+44d47
+<     puts("ProcessPagesWrapper");
+51a55,89
+> 
+> char* ExtractResultsWrapper(tesseract::TessBaseAPI* api) {
+>     char buffer[BUF_LEN];
+>     char *words;
+>     int *lengths;
+>     float *costs;
+>     int *x0;
+>     int *y0;
+>     int *x1;
+>     int *y1;
+> 
+>     api->TesseractExtractResult(&words, &lengths, &costs, 
+>         &x0, &y0, &x1, &y1,api->page_res_);
+> 
+>     int wordsLen = strlen(words);
+>     char largeBuffer [wordsLen * COORD_LEN];
+>     int tmpCnt = 0;
+>     int lenCnt = 0;
+> 
+>     for (int i = 0; i < wordsLen; i++) { 
+>         tmpCnt = sprintf(buffer,"%c %d %d %d %d", words[i],x0[i],y0[i],x1[i],y1[i]);
+>         if (++tmpCnt < COORD_LEN) {
+>             strcat(buffer,"\n");
+>             if (lenCnt == 0)
+>                 strcpy(largeBuffer,buffer);
+>             else
+>                 strcat(largeBuffer,buffer);
+>             lenCnt += tmpCnt;
+>         }
+>     }
+> 	char *retStr = new char[lenCnt + 1];
+>     strcpy(retStr,largeBuffer);
+> 
+>     return retStr;
+> }

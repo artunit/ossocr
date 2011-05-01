@@ -1,0 +1,9 @@
+615a616
+>  public:
+632a634,635
+>   
+>     PAGE_RES*         page_res_;        ///< The page-level data.
+638c641
+<   PAGE_RES*         page_res_;        ///< The page-level data.
+---
+>   //PAGE_RES*         page_res_;        ///< The page-level data.
