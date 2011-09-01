@@ -82,7 +82,7 @@ def numpy2pixbuf(a):
 def coordsheader(coordfile):
     coordfile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
-def ocr2coords(ocrresult, baseX, baseY, scale, height):
+def ocr2coords(ocrresult, baseX, baseY, scale, height, fileFlag):
     xmlfrag = ""
     word = ""
     words = ocrresult.split('\n')
@@ -103,8 +103,8 @@ def ocr2coords(ocrresult, baseX, baseY, scale, height):
                     # print "%s - %d,%d,%d,%d" % (char,x0,y0,x1,y1)
                     charWidth = y1 - y0
                     if xl == 0 and xr == 0:
-                        xmlfrag += ("%d %d charWidth %d %d\n" % (y0,y1,charWidth,height))
-                        xmlfrag += ("%d %d baseX x0\n" % (baseX,x0))
+                        xmlfrag += ("%d %d %d %d charWidth %d %d\n" % (x0,y0,x1,y1,charWidth,height))
+                        xmlfrag += ("%d %d baseX x0 %s\n" % (baseX,x0,fileFlag))
                         xl = round((baseX + x0)/scale)
                         yl = (height - y0) - charWidth
                         xmlfrag += ("%d %d baseY y0\n" % (baseY,y0))
@@ -339,9 +339,12 @@ for page_gray,pagefile in ocrolib.page_iterator(filelist):
         box = (x0,y0,x1,y1)
         smBox = mainIm.crop(box)
         smBox.save(imgtemp.name + str(i) + ".tif","TIFF")
+        fileFlag = "NADA"
 
         # you can save the regions in individual files
-        # smBox.save(str(x0) + "-" + str(y0) + "," + str(x1) + "-" + str(y1) + "-tmp" + str(i) + ".tif","TIFF")
+        if x0 == 200 and y0 == 1848:
+            smBox.save(str(x0) + "-" + str(y0) + "," + str(x1) + "-" + str(y1) + "-tmp" + str(i) + ".tif","TIFF")
+            fileFlag = "DADA"
         imgHeight = y1 - y0
 
         # this is where tesseract is invoked
@@ -359,8 +362,14 @@ for page_gray,pagefile in ocrolib.page_iterator(filelist):
             file.write("%s\n"%result)
             # result=tesseract.ExtractResultsWrapper(api) + ""
             if options.coords:
+                '''
                 result=ocr2coords(tesseract.ExtractResultsWrapper(api), (regions.x0(i) * SCALE), 
-                    (regions.y0(i) * SCALE), SCALE, imgHeight)
+                    (regions.y0(i) * SCALE), SCALE, imgHeight, fileFlag)
+                '''
+                if x0 == 200 and y0 == 1848:
+                    print "extract ", tesseract.ExtractResultsWrapper(api)
+                result=ocr2coords(tesseract.ExtractResultsWrapper(api), x0,
+                    y0, SCALE, imgHeight, fileFlag)
                 coordsfile.write(result);
 
         try:

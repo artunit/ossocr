@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: April 2011
+Last Revised: Sept. 2011
 
 This is a combination of ocropus <http://code.google.com/p/ocropus/> and
 tesseract <http://code.google.com/p/tesseract-ocr/>. There is a plugin
@@ -61,6 +61,7 @@ where:
 page.jpg
     the page to be OCRed
 
-This is a work in progress, comments and suggestions welcome.
+This is a work in progress, comments and suggestions welcome. This
+application will eventually be available by hadoop.
 
 art rhyno <http://projectconifer.ca>
