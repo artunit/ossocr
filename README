@@ -29,7 +29,8 @@ baseapi.h.patch
 main_dummy.cpp.patch
 main_dummy.h.patch
 
-Assuming you have the svn versions, patching would be a process like:
+Assuming you have the svn versions (last used on tesseract version 625, 
+python-tesseract version 81), patching would be a process like:
 
 cd ocropus/ocr-layout
 patch -p1 ocr-color-encode-layout.cc < /patches/ocr-color-encode-layout.cc.patch
@@ -50,7 +51,7 @@ python ossocr.py -c -s 2 -l eng -r column page.jpg
 where:
 
 -c  
-    provide coordinates
+    provide coordinates (file: coords.xml)
 -s 2    
     the original image should be doubled in size
 -l eng  
@@ -60,6 +61,9 @@ where:
     use column regions (default is line based)
 page.jpg
     the page to be OCRed
+
+By default, the raw OCR goes to a file called "ocr.txt" but this
+can be changed with the -o parameter.
 
 This is a work in progress, comments and suggestions welcome. This
 application will eventually be available by hadoop.

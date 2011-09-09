@@ -1,9 +1,39 @@
-615a616
->  public:
-632a634,635
->   
->     PAGE_RES*         page_res_;        ///< The page-level data.
-638c641
-<   PAGE_RES*         page_res_;        ///< The page-level data.
----
->   //PAGE_RES*         page_res_;        ///< The page-level data.
+--- baseapi.h.orig	2011-09-01 23:43:05.178111564 -0400
++++ baseapi.h	2011-09-06 20:56:12.427451761 -0400
+@@ -613,7 +613,10 @@
+   /** Recognize text doing one pass only, using settings for a given pass. */
+   PAGE_RES* RecognitionPass1(BLOCK_LIST* block_list);
+   PAGE_RES* RecognitionPass2(BLOCK_LIST* block_list, PAGE_RES* pass1_result);
++ public:
++  PAGE_RES* page_res_;
+ 
++ public:
+   /**
+    * Extract the OCR results, costs (penalty points for uncertainty),
+    * and the bounding boxes of the characters.
+@@ -625,10 +628,16 @@
+                                     int** y0,
+                                     int** x1,
+                                     int** y1,
++                                    char** char_4_coords,
++                                    int** char_x0,
++                                    int** char_y0,
++                                    int** char_x1,
++                                    int** char_y1,
+                                     PAGE_RES* page_res);
+ 
+   const PAGE_RES* GetPageRes() const {
+     return page_res_;
++
+   };
+ 
+  protected:
+@@ -636,7 +645,7 @@
+   Tesseract*        osd_tesseract_;   ///< For orientation & script detection.
+   ImageThresholder* thresholder_;     ///< Image thresholding module.
+   BLOCK_LIST*       block_list_;      ///< The page layout.
+-  PAGE_RES*         page_res_;        ///< The page-level data.
++  //PAGE_RES*         page_res_;        ///< The page-level data.
+   STRING*           input_file_;      ///< Name used by training code.
+   STRING*           output_file_;     ///< Name used by debug code.
+   STRING*           datapath_;        ///< Current location of tessdata.

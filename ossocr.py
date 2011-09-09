@@ -8,7 +8,7 @@
 
 from array import array
 import Image, TiffImagePlugin
-import os, tempfile
+import json, os, tempfile
 
 import pygtk
 pygtk.require("2.0")
@@ -16,7 +16,8 @@ import gtk
 
 import matplotlib
 matplotlib.rcParams["interactive"] = 1
-matplotlib.use('TkAgg') # Qt4Agg
+if "DISPLAY" not in os.environ: matplotlib.use('AGG')
+else: matplotlib.use('GTK')
 
 from pylab import *
 import traceback
@@ -24,19 +25,16 @@ import tesseract
 
 import Image
 
-# import resource 
-# resource.setrlimit(resource.RLIMIT_DATA,(2e9,2e9))
-
 import sys,os,re,glob
 import ocrolib
 from ocrolib import plotutils
 from ocrolib import hocr
-from ocrolib import common
 
 ion()
 hold(False)
 
 IS_VALID = re.compile('[a-z|A-Z|0-9|\.|\'|\"|\s]')
+IS_STOP = re.compile('[\.|,|;|\s]')
 SCALE    = 1
 LZW      = "lzw"
 ZIP      = "zip"
@@ -82,49 +80,63 @@ def numpy2pixbuf(a):
 def coordsheader(coordfile):
     coordfile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
-def ocr2coords(ocrresult, baseX, baseY, scale, height, fileFlag):
-    xmlfrag = ""
-    word = ""
-    words = ocrresult.split('\n')
+def ocr2coords(ocrresult, baseX, baseY, scale, height):
+    """ Pull together coordinate information in XML format """
+    word = xmlfrag = ""
+    obj = json.loads(ocrresult)
+    ocrchars = obj["chars_pos"]
+    x0 = y0 = x1 = y1 = 0
     xl = yl = xr = yr = 0
-    for letter in words:
-        chars = letter.split()
-        # print "-> %s %d %d" % (letter, len(letter),len(chars))
-        if len(chars) == 5:
-            try:
-                charStr = "%s" % chars[0]
-                charTest = re.search(IS_VALID, charStr)
-                if charTest:
-                    char = unicode(charStr, "utf-8")
-                    x0 = int(chars[1])
-                    y0 = int(chars[2])
-                    x1 = int(chars[3])
-                    y1 = int(chars[4])
-                    # print "%s - %d,%d,%d,%d" % (char,x0,y0,x1,y1)
-                    charWidth = y1 - y0
-                    if xl == 0 and xr == 0:
-                        xmlfrag += ("%d %d %d %d charWidth %d %d\n" % (x0,y0,x1,y1,charWidth,height))
-                        xmlfrag += ("%d %d baseX x0 %s\n" % (baseX,x0,fileFlag))
-                        xl = round((baseX + x0)/scale)
-                        yl = (height - y0) - charWidth
-                        xmlfrag += ("%d %d baseY y0\n" % (baseY,y0))
-                        yl = round((baseY + yl)/scale)
-                    xr = round((baseX + x1)/scale)
-                    yr = (height - y1) + charWidth
-                    yr = round((baseY + y1)/scale)
-                    # xmlfrag += ("%s - %d,%d,%d,%d\n" % (char,x0,y0,x1,y1))
-                    word += char
-            except:
-                traceback.print_exc()
-                pass
-        else:
-            if len(word) > 0:
-                xmlfrag += ("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" % 
-                    (xl,yl,word,xr,yr))
-                word = ""
-            xl = yl = xr = yr = 0
+    tcx0 = tcy0 = tcx1 = tcy1 = 0
 
-    return xmlfrag
+    for tcinfo in ocrchars:
+        tc = tcinfo["tc"]
+        char = tc["c"]
+                
+        stopChar = re.search(IS_STOP, char)
+
+        tcx0 = int(tc["x0"])
+        tcy0 = int(tc["y0"])
+        tcx1 = int(tc["x1"])
+        tcy1 = int(tc["y1"])
+
+        #tesseract works from the bottom up for Y but we need to work from the top
+        tcy0 = height - tcy0
+        tcy1 = height - tcy1
+
+        if not stopChar:
+            if len(word) == 0:
+                    x0 = tcx0
+                    y0 = tcy0
+                    x1 = tcx1
+                    y1 = tcy1
+            word += char
+
+        if ((tcx0 == 0 and tcy0 == 0 and tcx1 == 0 and tcy1 == 0) or stopChar) and len(word) > 0:
+
+            #adjust for offset and scale
+            x0 = round((baseX + x0)/scale)
+            y0 = round((baseY + y0)/scale)
+            x1 = round((baseX + x1)/scale)
+            y1 = round((baseY + y1)/scale)
+
+            #note that we swap Y values because of changing the orientation
+            if x0 >= 0 and y0 >=0 and x1 >=0 and y1 >=0:
+                    xmlfrag += ("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" % 
+                         (x0,y1,word,xr,yl))
+            word = ""
+            
+        if not stopChar:
+           xl = round((baseX + tcx0)/scale)
+           xr = round((baseX + tcx1)/scale)
+           yl = round((baseY + tcy0)/scale)
+           yr = round((baseY + tcy1)/scale)
+        
+    if len(word) > 0:
+        xmlfrag += ("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" % 
+            (x0,y1,word,xr,yl))
+
+    return "<words>\n" + xmlfrag + "</words>\n"
 
 def alert(*args):
     sys.stderr.write(" ".join([str(x) for x in args]))
@@ -300,9 +312,9 @@ for page_gray,pagefile in ocrolib.page_iterator(filelist):
     # We use the RegionExtractor utility class for that.  The page_seg image
     # is just an RGB image, see http://docs.google.com/Doc?id=dfxcv4vc_92c8xxp7
     regions = ocrolib.RegionExtractor()
-    if options.region.find("column"):
+    if "column" in options.region:
         regions.setPageColumns(page_seg)
-    elif options.region.find("para"):
+    elif "para" in options.region:
         regions.setPageParagraphs(page_seg)
     else:
         regions.setPageLines(page_seg)
@@ -318,18 +330,15 @@ for page_gray,pagefile in ocrolib.page_iterator(filelist):
     alert("[note]",pagefile,"lines:",regions.length())
     api=tesseract.TessBaseAPI()
     api.SetOutputName("outputName")
-    #api.Init(".","eng",tesseract.OEM_DEFAULT)
     api.Init(".",options.language,tesseract.OEM_DEFAULT)
     api.SetPageSegMode(tesseract.PSM_AUTO);
-    #mainIm = Image.open("np.png")
     mainIm = Image.open(imgtemp.name)
 
     for i in range(1,regions.length()):
         line = regions.extract(page_bin,i,1) # might use page_gray
+
         if ocrolib.quick_check_line_components(line,dpi=options.dpi)<0.5:
             continue
-
-        # print "tmp%d=%d %d %d %d"% (i,regions.x0(i),regions.y0(i),regions.x1(i),regions.y1(i))
 
         x0 = regions.x0(i) * SCALE
         y0 = regions.y0(i) * SCALE
@@ -339,12 +348,14 @@ for page_gray,pagefile in ocrolib.page_iterator(filelist):
         box = (x0,y0,x1,y1)
         smBox = mainIm.crop(box)
         smBox.save(imgtemp.name + str(i) + ".tif","TIFF")
-        fileFlag = "NADA"
 
-        # you can save the regions in individual files
+        # you can save the regions in individual files - useful for debuging
+	"""
+	smBox.save(str(x0) + "-" + str(y0) + "," + str(x1) + "-" + str(y1) + "-tmp" + str(i) + ".tif","TIFF")
         if x0 == 200 and y0 == 1848:
             smBox.save(str(x0) + "-" + str(y0) + "," + str(x1) + "-" + str(y1) + "-tmp" + str(i) + ".tif","TIFF")
-            fileFlag = "DADA"
+	"""
+
         imgHeight = y1 - y0
 
         # this is where tesseract is invoked
@@ -352,24 +363,14 @@ for page_gray,pagefile in ocrolib.page_iterator(filelist):
         result = result.replace("\n","")
         result = result.replace("\t","")
         result = result.strip()
+
         if len(result) > 0:
             # print "%d - TIF Result= %s" % (len(result),result)
-            '''
-            file.write("%d %d %d %d: %s\n" % (round(regions.x0(i)/SCALE),
-                round(regions.y0(i)/SCALE),round(regions.x1(i)/SCALE),
-                round(regions.y1(i)/SCALE), result))
-            '''
             file.write("%s\n"%result)
-            # result=tesseract.ExtractResultsWrapper(api) + ""
+
             if options.coords:
-                '''
-                result=ocr2coords(tesseract.ExtractResultsWrapper(api), (regions.x0(i) * SCALE), 
-                    (regions.y0(i) * SCALE), SCALE, imgHeight, fileFlag)
-                '''
-                if x0 == 200 and y0 == 1848:
-                    print "extract ", tesseract.ExtractResultsWrapper(api)
                 result=ocr2coords(tesseract.ExtractResultsWrapper(api), x0,
-                    y0, SCALE, imgHeight, fileFlag)
+                    y0, SCALE, imgHeight)
                 coordsfile.write(result);
 
         try:
