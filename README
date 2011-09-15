@@ -65,6 +65,13 @@ page.jpg
 By default, the raw OCR goes to a file called "ocr.txt" but this
 can be changed with the -o parameter.
 
+It is still unclear what the optimum image processing should be
+for the most effective OCR, but the gimp script (wavelet.scm)
+shows the steps being tried. So far, the parameters that
+seem to be produce the clearest text are:
+
+gimp -i -b "(batch-wavelet-enhance \"*.JPG\" 25.0 2.0 1.0)" -b "(gimp-quit 0)"
+
 This is a work in progress, comments and suggestions welcome. This
 application will eventually be available by hadoop.
 
