@@ -15,14 +15,15 @@
                 (plug-in-wavelet-sharpen RUN-NONINTERACTIVE
                     image drawable amount radius luminance)
                 (gimp-image-convert-grayscale image)
-                (gimp-invert 2)
+                (gimp-invert drawable)
                 (define newFilename (string-append
                     (substring filename 0 (- (string-length filename) 4))
                     ".png"
-                                
+
                 ))
                 (file-png-save RUN-NONINTERACTIVE
                     image drawable newFilename newFilename
                     FALSE 0 FALSE FALSE FALSE FALSE FALSE)
                 (gimp-image-delete image))
                 (set! filelist (cdr filelist)))))
+
