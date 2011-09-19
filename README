@@ -38,6 +38,7 @@ patch -p1 ocr-deskew-rast.h < /patches/ocr-deskew-rast.h.patch
 
 cd tesseract/api
 patch -p1 baseapi.h < /patches/baseapi.h.patch
+patch -p1 baseapi.cpp < /patches/baseapi.cpp.patch
 
 cd python-tesseract/swig
 patch -p1 main_dummy.cpp < /patches/main_dummy.cpp.patch
