@@ -1,14 +1,18 @@
 README – Created: April 2011
 Last Revised: Sept. 2011
 
-This is a combination of ocropus <http://code.google.com/p/ocropus/> and
-tesseract <http://code.google.com/p/tesseract-ocr/>. There is a plugin
-mechanism in ocropus but I have used python-tesseract
+Originally, this was a combination of ocropus <http://code.google.com/p/ocropus/> 
+and tesseract <http://code.google.com/p/tesseract-ocr/>. There is a plugin
+mechanism in ocropus but I had used python-tesseract
 <http://code.google.com/p/python-tesseract/> to bring the technologies
-together. Basically, the goal is to have ocropus to do the page
+together. Basically, the goal was to have ocropus to do the page
 segmentation for the images but to have tesseract perform the actual OCR. In
 the process, we also want to capture coordinate information for each word for 
 use in highlighting later.
+
+As I have worked through preprocessing options, the segmentation has become
+less of an issue, and I am currently working tesseract for all of the 
+OCR processing.
 
 Our target has been newspaper images, which seems to stretch the limits of 
 OCR software and we have done some patching to increase parameters that
@@ -16,14 +20,11 @@ were problematic for this kind of material, as well as to add some addition
 functionality.
 
 The links above include the documentation for the SVN and development
-versions of the application. These are the patches available here:
-
-# for ocropus
-ocr-color-encode-layout.cc.patch
-ocr-deskew-rast.h.patch
+versions of the application. The patches that are in use now are:
 
 # for tesseract
 baseapi.h.patch
+baseapi.cpp.patch
 
 # for python-tesseract
 main_dummy.cpp.patch
@@ -32,22 +33,18 @@ main_dummy.h.patch
 Assuming you have the svn versions (last used on tesseract version 625, 
 python-tesseract version 81), patching would be a process like:
 
-cd ocropus/ocr-layout
-patch -p1 ocr-color-encode-layout.cc < /patches/ocr-color-encode-layout.cc.patch
-patch -p1 ocr-deskew-rast.h < /patches/ocr-deskew-rast.h.patch
+# for tesseract
+patch -p1 api/baseapi.h < /patches/baseapi.h.patch
+patch -p1 api/baseapi.cpp < /patches/baseapi.cpp.patch
 
-cd tesseract/api
-patch -p1 baseapi.h < /patches/baseapi.h.patch
-patch -p1 baseapi.cpp < /patches/baseapi.cpp.patch
-
-cd python-tesseract/swig
+# for python-tesseract
 patch -p1 main_dummy.cpp < /patches/main_dummy.cpp.patch
 patch -p1 main_dummy.h < /patches/main_dummy.h.patch
 
-The python application (ossocr.py) has a lot of parameters, but newspaper
+The python application (ossocr.py) has several parameters, but newspaper
 page OCR processing has tended to look like this:
 
-python ossocr.py -c -s 2 -l eng -r column page.jpg
+python ossocr.py -c -s 2 -l eng page.jpg
 
 where:
 
@@ -58,8 +55,6 @@ where:
 -l eng  
     the language to be used is english (these names are based on
     tesseract conventions)
--r column
-    use column regions (default is line based)
 page.jpg
     the page to be OCRed
 
@@ -71,7 +66,7 @@ for the most effective OCR, but the gimp script (wavelet.scm)
 shows the steps being tried. So far, the parameters that
 seem to be produce the clearest text are:
 
-gimp -i -b "(batch-wavelet-enhance \"*.JPG\" 25.0 2.0 1.0)" -b "(gimp-quit 0)"
+gimp -i -b "(batch-wavelet-enhance \"*.JPG\" 25.0 2.0 1.0 0.75)" -b "(gimp-quit 0)"
 
 This is a work in progress, comments and suggestions welcome. This
 application will eventually be available by hadoop.

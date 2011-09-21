@@ -5,13 +5,15 @@
 (define (batch-wavelet-enhance pattern
     amount
     radius
-    luminance)
+    luminance
+    quality)
     (let* ((filelist (cadr (file-glob pattern 1))))
         (while (not (null? filelist))
             (let* ((filename (car filelist))
                 (image (car (gimp-file-load RUN-NONINTERACTIVE
                     filename filename)))
                 (drawable (car (gimp-image-get-active-layer image))))
+                (gimp-image-convert-grayscale image)
                 (plug-in-wavelet-sharpen RUN-NONINTERACTIVE
                     image drawable amount radius luminance)
                 (gimp-invert drawable)
@@ -22,8 +24,8 @@
                 ))
                 (file-jpeg-save RUN-NONINTERACTIVE
                     image drawable newFilename newFilename 
-                    0.75 0 1 0 "ossocr" 0 1 0 0 )
-                    ; 0.75 quality (float 0 <= x <= 1)
+                    quality 0 1 0 "ossocr" 0 1 0 0 )
+                    ; 0.xx quality (float 0 <= x <= 1)
                     ;      0 smoothing factor (0 <= x <= 1)
                     ;        1 optimization of entropy encoding parameter (0/1)
                     ;          1 enable progressive jpeg image loading (0/1)

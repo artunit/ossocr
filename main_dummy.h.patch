@@ -1,2 +1,10 @@
-3a4
-> char* ExtractResultsWrapper(tesseract::TessBaseAPI* api);
+--- main_dummy.h.orig	2011-09-18 19:47:50.000000000 -0400
++++ main_dummy.h	2011-09-20 09:49:30.000000000 -0400
+@@ -1,6 +1,7 @@
+ bool isLibTiff(); 
+ bool isLibLept(); 
+ char* ProcessPagesWrapper(const char* image,tesseract::TessBaseAPI* api);
++int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile);
+ char* ProcessPagesPix(const char* image,tesseract::TessBaseAPI* api);
+ char* ProcessPagesFileStream(const char* image,tesseract::TessBaseAPI* api);
+ char* ProcessPagesBuffer(char* buffer, int fileLen, tesseract::TessBaseAPI* api);

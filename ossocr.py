@@ -10,14 +10,14 @@ from array import array
 import Image, TiffImagePlugin
 import json, os, tempfile
 
-import pygtk
-pygtk.require("2.0")
-import gtk
+#import pygtk
+#pygtk.require("2.0")
+#import gtk
 
-import matplotlib
-matplotlib.rcParams["interactive"] = 1
-if "DISPLAY" not in os.environ: matplotlib.use('AGG')
-else: matplotlib.use('GTK')
+#import matplotlib
+#matplotlib.rcParams["interactive"] = 1
+#if "DISPLAY" not in os.environ: matplotlib.use('AGG')
+#else: matplotlib.use('GTK')
 
 from pylab import *
 import traceback
@@ -26,9 +26,6 @@ import tesseract
 import Image
 
 import sys,os,re,glob
-import ocrolib
-from ocrolib import plotutils
-from ocrolib import hocr
 
 ion()
 hold(False)
@@ -79,136 +76,95 @@ def numpy2pixbuf(a):
 
 def coordsheader(coordfile):
     coordfile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+    coordfile.write("<words>\n")
 
-def ocr2coords(ocrresult, baseX, baseY, scale, height):
+def ocr2coords(scale, height, coordsin, coordsfile):
     """ Pull together coordinate information in XML format """
-    word = xmlfrag = ""
-    obj = json.loads(ocrresult)
-    ocrchars = obj["chars_pos"]
+
+    char = word = ""
     x0 = y0 = x1 = y1 = 0
-    xl = yl = xr = yr = 0
     tcx0 = tcy0 = tcx1 = tcy1 = 0
+    xl = yl = xr = yr = 0
 
-    for tcinfo in ocrchars:
-        tc = tcinfo["tc"]
-        char = tc["c"]
-                
-        stopChar = re.search(IS_STOP, char)
+    infile = open(coordsin,"r")
+    for line in infile:
+        entries = line.split()
 
-        tcx0 = int(tc["x0"])
-        tcy0 = int(tc["y0"])
-        tcx1 = int(tc["x1"])
-        tcy1 = int(tc["y1"])
+        stopChar = False
 
-        #tesseract works from the bottom up for Y but we need to work from the top
-        tcy0 = height - tcy0
-        tcy1 = height - tcy1
+        if len(entries) == 5:
+            char = entries[0]
 
-        if not stopChar:
-            if len(word) == 0:
-                    x0 = tcx0
-                    y0 = tcy0
-                    x1 = tcx1
-                    y1 = tcy1
+            stopChar = re.search(IS_STOP, char)
+            if not stopChar:
+                tcx0 = int(entries[1])
+                tcy0 = int(entries[2])
+                tcx1 = int(entries[3])
+                tcy1 = int(entries[4])
+
+                #tesseract works from the bottom up for Y but we need to work from the top
+                tcy0 = height - tcy0
+                tcy1 = height - tcy1
+
+        if len(word) == 0:
+            x0 = tcx0
+            y0 = tcy0
+            x1 = tcx1
+            y1 = tcy1
+
+        if len(entries) == 5 and not stopChar:
             word += char
 
-        if ((tcx0 == 0 and tcy0 == 0 and tcx1 == 0 and tcy1 == 0) or stopChar) and len(word) > 0:
+        if (len(entries) == 4 or stopChar) and len(word) > 0:
 
-            #adjust for offset and scale
-            x0 = round((baseX + x0)/scale)
-            y0 = round((baseY + y0)/scale)
-            x1 = round((baseX + x1)/scale)
-            y1 = round((baseY + y1)/scale)
+            #print "%d: %d,%d,%d,%d -> %d"%(height,x0,y0,x1,y1,scale)
+            #adjust for scale
+            x0 = round(x0/scale)
+            y0 = round(y0/scale)
+            x1 = round(x1/scale)
+            y1 = round(y1/scale)
 
             #note that we swap Y values because of changing the orientation
             if x0 >= 0 and y0 >=0 and x1 >=0 and y1 >=0:
-                    xmlfrag += ("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" % 
+                    coordsfile.write("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" %
                          (x0,y1,word,xr,yl))
             word = ""
-            
-        if not stopChar:
-           xl = round((baseX + tcx0)/scale)
-           xr = round((baseX + tcx1)/scale)
-           yl = round((baseY + tcy0)/scale)
-           yr = round((baseY + tcy1)/scale)
-        
+
+        if not stopChar and len(entries) == 5:
+           xl = round(tcx0/scale)
+           xr = round(tcx1/scale)
+           yl = round(tcy0/scale)
+           yr = round(tcy1/scale)
+
     if len(word) > 0:
-        xmlfrag += ("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" % 
+        coordsfile.write("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" %
             (x0,y1,word,xr,yl))
 
-    return "<words>\n" + xmlfrag + "</words>\n"
 
 def alert(*args):
     sys.stderr.write(" ".join([str(x) for x in args]))
     sys.stderr.write("\n")
 
 from optparse import OptionParser
-prefix = "/usr/local/share/ocropus/models/"
+
 parser = OptionParser(usage="""
-%prog [options] image1 image2 ...
-
-Recognize pages using built-in OCRopus components.  This first
-uses the page cleaner, then the page segmenter, then the line
-recognizers, and finally the language model.
-
-The following components take files as arguments, and those files
-are loaded in various ways.
-
---linerec -- line recognizer (.pymodel, .cmodel, or .model)
---fst -- language model (OpenFST language model dump)
-
-If you want to see what's going on, run ocropus-pages with the "-d" option
-("-D" for continuous output, but this slows down recognition significantly).
-With the "-L" option, you also see each text line as it's being recognized.
-
-(For even more insight into what is going on during recognition, use the
-ocropus-showpsegs and ocropus-showlrecs commands.)
-
-Advanced Usage:
-
-You can choose from a number of components for the different
-processing stages.  See the output of "ocropus components" for your
-choices.
+%prog [options] image1 
 
 Possible choices are:
 
---clean (ICleanupGray) -- binarization, denoising, deskewing
---pseg (ISegmentPage) -- page segmentation
---ticlass (ITextImageSegmentation) -- text/image segmentation (off by default)
+--scale -- resize image for OCR processing
+--language -- tesseract language code
+--coords -- write coordinate information
+--output -- specify output file, defaults to ocr.txt
 
-For each component, you can pass additional parameters.  For example,
---clean StandardPreprocessing:rmbig_minaspect=0.1 uses an instance of
-StandardPreprocessing for cleanup and sets its rmbig_minaspect
-parameter to 0.1.  You can see a list of all the parameters with
-"ocropus params StandardPreprocessing".
-
-Instead of component names, you can also pass the names of
-constructors of Python classes for each of those components, as in
-"--clean my.CleanupPage:threshold=0.3" or "--clean
-my.CleanupPage(0.3)".  This will import the "my" package and then call
-the constructor.
 """)
 
-# additions
+
+# options
 parser.add_option("-s","--scale",help="scale for resize",default=SCALE)
 parser.add_option("-l","--language",help="language for OCR",default="eng")
-parser.add_option("-r","--region",help="region for page",default="lines")
 parser.add_option("-c","--coords",help="write coordinates in XML",action="store_true")
 parser.add_option("-o","--output",help="specify output file",default="ocr.txt")
-
-# original
-parser.add_option("-C","--clean",help="page cleaner",default="StandardPreprocessing")
-parser.add_option("-P","--pseg",help="line segmenter",default="SegmentPageByRAST")
-parser.add_option("-T","--ticlass",help="text image segmenter",default=None)
-parser.add_option("-m","--linerec",help="linerec model",default=prefix+"default.model")
-parser.add_option("-f","--fst",help="fst langmod",default=prefix+"default.fst")
-parser.add_option("-w","--lweight",help="weight for the language model",type="float",default=1.0)
-parser.add_option("-v","--verbose",help="verbose",action="store_true")
-parser.add_option("-x","--hocr",help="output XHTML+hOCR",action="store_true")
-parser.add_option("-p","--plain",help="output plain text",action="store_true")
-parser.add_option("-i","--dpi",help="resolution in dpi",default=200,type=int)
-parser.add_option("-S","--silent",action="store_true",help="disable warnings")
-parser.add_option("-B","--beam",help="size of beam in beam search",type="int",default=1000)
 
 (options,args) = parser.parse_args()
 
@@ -217,8 +173,6 @@ if len(args)==0:
     sys.exit(0)
 
 SCALE = int(options.scale)
-
-filelist = []
 
 img = Image.open(args[0])
 width, height = img.size
@@ -229,40 +183,9 @@ if SCALE > 1:
 #options are BICUBIC, NEAREST, BILINEAR, and ANTIALIAS
 img = img.resize((width * SCALE, height * SCALE), Image.BICUBIC)
 
-# we work from temporary file in PNG format
+# we work from temporary file in TIFF format
 imgtemp = tempfile.NamedTemporaryFile()
-img.save(imgtemp.name,"PNG")
-
-filelist.append(args[0])
-
-# FIXME add language model weights
-assert options.lweight==1.0,"other language model weights not implemented yet"
-
-
-# Create/load the various recognition components.  Note that you can pass parameters
-# to any of these using the syntax documented under ocrolib.make_component.
-
-# The preprocessor: removes noise, performs page deskewing, and other cleanup.
-preproc = ocrolib.make_IBinarize(options.clean)
-
-# The page segmenter.
-segmenter = ocrolib.make_ISegmentPage(options.pseg)
-
-# The line recognizer.  Note that this is loaded, not instantiated.
-# You can pass x.model, x.cmodel, and x.pymodel, which loads a C++
-# line recognizer, a C++ character recognizer, or a pickled Python line
-# recognizer respectively.
-linerec = ocrolib.load_linerec(options.linerec)
-alert("[note]","line recognizer:",linerec)
-
-# The language model, loaded from disk.
-lmodel = ocrolib.OcroFST()
-lmodel.load(options.fst)
-
-# The text/image segmenter, if given.
-ticlass = None
-if options.ticlass is not None:
-    ticlass = ocrolib.make_ITextImageClassification(options.ticlass)
+img.save(imgtemp.name,"TIFF")
 
 file = open(options.output, 'w')
 
@@ -271,120 +194,30 @@ if options.coords:
     coordsfile = open("coords.xml", 'w')
     coordsheader(coordsfile)
 
-# Now start the output with printing the hOCR header if hOCR output has been requested.
-if options.hocr:
-    print hocr.header()
+api=tesseract.TessBaseAPI()
+api.SetOutputName("outputName")
+api.Init(".",options.language,tesseract.OEM_DEFAULT)
+api.SetPageSegMode(tesseract.PSM_AUTO);
 
-# Iterate through the pages specified by the argument.  Since this can be somewhat tricky
-# with TIFF files, we use the page_iterator abstraction that takes care of all the special
-# cases.  But basically, this just gives us one gray image after another, plus the file name.
-pageno = 0
+result=tesseract.ProcessPagesWrapper(imgtemp.name,api) + ""
+        
+result = result.replace("\n","")
+result = result.replace("\t","")
+result = result.strip()
+#print "len", len(result)
 
+if len(result) > 0:
+    # print "%d - TIF Result= %s" % (len(result),result)
+    file.write("%s\n"%result)
 
-for page_gray,pagefile in ocrolib.page_iterator(filelist):
-
-    pageno += 1
-    sys.stderr.write("[note] *** %d %s ***\n"%(pageno,pagefile))
-
-    # Output geometric page information.
-    # FIXME add: bbox, ppageno
-    if options.hocr: 
-        print "<div class='ocr_page' id='page_%d' ppageno='%d' image='%s'>"% \
-            (pageno,pageno,pagefile)
-
-    # Perform cleanup and binarization of the page.
-    page_bin,page_gray = preproc.binarize(page_gray)
-
-    if not options.silent:
-        if ocrolib.quick_check_page_components(page_bin,dpi=options.dpi)<0.5:
-            continue
-
-    # Black out images in the binary page image.
-    # This will cause images to be treated as non-text blocks
-    # by the page segmenter.
-    if ticlass is not None:
-        ocrolib.blackout_images(page_bin,ticlass)
-
-    # Perform page segmentation into text columns and text lines.
-    page_seg = segmenter.segment(page_bin)
-
-    # Now iterate through the text lines of the page, in reading order.
-    # We use the RegionExtractor utility class for that.  The page_seg image
-    # is just an RGB image, see http://docs.google.com/Doc?id=dfxcv4vc_92c8xxp7
-    regions = ocrolib.RegionExtractor()
-    if "column" in options.region:
-        regions.setPageColumns(page_seg)
-    elif "para" in options.region:
-        regions.setPageParagraphs(page_seg)
-    else:
-        regions.setPageLines(page_seg)
-    #regions.setPageLines(page_seg)
-
-    # If there are too many text lines, probably something went wrong with the
-    # page segmentation. (FIXME: make this more flexible)
-    # if regions.length()>150:
-    if regions.length()>10000:
-        alert("[error] too many lines (%d), probably bad input; skipping"%regions.length())
-        continue
-
-    alert("[note]",pagefile,"lines:",regions.length())
-    api=tesseract.TessBaseAPI()
-    api.SetOutputName("outputName")
-    api.Init(".",options.language,tesseract.OEM_DEFAULT)
-    api.SetPageSegMode(tesseract.PSM_AUTO);
-    mainIm = Image.open(imgtemp.name)
-
-    for i in range(1,regions.length()):
-        line = regions.extract(page_bin,i,1) # might use page_gray
-
-        if ocrolib.quick_check_line_components(line,dpi=options.dpi)<0.5:
-            continue
-
-        x0 = regions.x0(i) * SCALE
-        y0 = regions.y0(i) * SCALE
-        x1 = regions.x1(i) * SCALE
-        y1 = regions.y1(i) * SCALE
-
-        box = (x0,y0,x1,y1)
-        smBox = mainIm.crop(box)
-        smBox.save(imgtemp.name + str(i) + ".tif","TIFF")
-
-        # you can save the regions in individual files - useful for debuging
-	"""
-	smBox.save(str(x0) + "-" + str(y0) + "," + str(x1) + "-" + str(y1) + "-tmp" + str(i) + ".tif","TIFF")
-        if x0 == 200 and y0 == 1848:
-            smBox.save(str(x0) + "-" + str(y0) + "," + str(x1) + "-" + str(y1) + "-tmp" + str(i) + ".tif","TIFF")
-	"""
-
-        imgHeight = y1 - y0
-
-        # this is where tesseract is invoked
-        result=tesseract.ProcessPagesWrapper(imgtemp.name + str(i) + ".tif",api) + ""
-        result = result.replace("\n","")
-        result = result.replace("\t","")
-        result = result.strip()
-
-        if len(result) > 0:
-            # print "%d - TIF Result= %s" % (len(result),result)
-            file.write("%s\n"%result)
-
-            if options.coords:
-                result=ocr2coords(tesseract.ExtractResultsWrapper(api), x0,
-                    y0, SCALE, imgHeight)
-                coordsfile.write(result);
-
-        try:
-            os.unlink(imgtemp.name + str(i) + ".tif")
-        except: pass
-
-    # Close off the DIV for the page.
-    if options.hocr:
-        print "</div>"
+    if options.coords:
+        coordtemp = tempfile.NamedTemporaryFile()
+        result = tesseract.ExtractResultsWrapper(api, coordtemp.name)
+        #print "len", result
+        ocr2coords(SCALE, height * SCALE, coordtemp.name, coordsfile)
 
 file.close()
             
 if options.coords:
+    coordsfile.write("</words>\n")
     coordsfile.close()
-
-if options.hocr:
-    print hocr.footer()

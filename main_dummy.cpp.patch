@@ -1,5 +1,5 @@
---- main_dummy.cpp.orig	2011-09-02 13:55:43.127991525 -0400
-+++ main_dummy.cpp	2011-09-08 19:48:58.156727992 -0400
+--- main_dummy.cpp.orig	2011-09-18 19:47:40.000000000 -0400
++++ main_dummy.cpp	2011-09-20 09:50:05.000000000 -0400
 @@ -16,6 +16,7 @@
  #endif
  #include "allheaders.h"
@@ -8,18 +8,7 @@
  #include "strngs.h"
  #include "tprintf.h"
  #include "tesseractmain.h"
-@@ -23,6 +24,10 @@
- 	#include "fmemopen.h"
- #endif
- 
-+//additions for Discovery Garden and Our Ontario
-+#define BUF_LEN 250    //length of buffer for sorting out result coordinates
-+#define COORD_LEN 75   //limit for coordinate lines, anything beyond this is probably bogus
-+
- bool isLibLept() {
- 
- 	#if defined(HAVE_LIBLEPT)
-@@ -159,7 +164,67 @@
+@@ -159,7 +160,47 @@
  	free(buffer);
  	return retStr;
   }
@@ -28,8 +17,7 @@
 +/*
 +	Special function for Discovery Garden and Our Ontario
 +*/
-+char* ExtractResultsWrapper(tesseract::TessBaseAPI* api) {
-+    char buffer[BUF_LEN];
++int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile) {
 +    char *words;
 +    int *lengths;
 +    float *costs;
@@ -46,46 +34,27 @@
 +    //this is lame - but will have to revisit when we figure out what characters JSON trips on
 +    const char *valid_characters = " .,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#^&*()-_+=:;{}[]|?";
 +
++
 +    //the all important call
 +    api->TesseractExtractResult(&words, &lengths, &costs,
 +        &x0, &y0, &x1, &y1,&char_4_coords,&char_x0,&char_y0,
-+	&char_x1,&char_y1,api->page_res_);
++	    &char_x1,&char_y1,api->page_res_);
++
++    FILE *coordfile = NULL;
++    coordfile = fopen(outfile, "w");
 +
 +    int wordsLen = strlen(char_4_coords);
 +
-+    int char_limit = wordsLen * COORD_LEN;
-+    char largeBuffer [char_limit];
-+    if (wordsLen > 0) {
-+	strcpy(largeBuffer,"{\"chars_pos\":[");
-+    }//if
-+	
 +    int tmpCnt = 0;
-+    int lenCnt = 0;
++
 +    for (int i = 0; i < wordsLen; i++) {
-+	if (strchr(valid_characters,char_4_coords[i])) {
-+		/*
-+			we define a JSON structure for passing characters and coordinates
-+		*/
-+        	tmpCnt = sprintf(buffer,"{\"tc\":{\"c\":\"%c\",\"x0\":%d,\"y0\":%d,\"x1\":%d,\"y1\":%d}}",
-+			char_4_coords[i],char_x0[i],char_y0[i],char_x1[i],char_y1[i]);
-+		// printf("limit: %d, %d %d %s\n",char_limit,lenCnt,tmpCnt,buffer);
-+        	if ((lenCnt + tmpCnt) < char_limit) {
-+            		if (lenCnt>0) {
-+				strcat(largeBuffer,",");
-+ 				lenCnt++;
-+            		}//if
-+            		strcat(largeBuffer,buffer);
-+            		lenCnt += tmpCnt;
-+        	}//if lenCnt
-+	}//if
++	    if (strchr(valid_characters,char_4_coords[i]))
++            fprintf(coordfile,"%c %d %d %d %d\n",char_4_coords[i],char_x0[i],char_y0[i],char_x1[i],char_y1[i]);
 +    }//for
 +            
-+    if (wordsLen > 0) {
-+	strcat(largeBuffer,"]}");
-+    }//if
-+    char *retStr = largeBuffer;
++    fclose(coordfile);
 +
-+    return retStr;
++    return wordsLen;
 +}
  
 -                
