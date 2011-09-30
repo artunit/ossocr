@@ -41,25 +41,30 @@ patch -p1 api/baseapi.cpp < /patches/baseapi.cpp.patch
 patch -p1 main_dummy.cpp < /patches/main_dummy.cpp.patch
 patch -p1 main_dummy.h < /patches/main_dummy.h.patch
 
-The python application (ossocr.py) has several parameters, but newspaper
-page OCR processing has tended to look like this:
+The python application (ossocr.py) has several parameters for standalone
+processing, but is set up by default for hadoop stream processing. For
+standalone and testing, you probably want something like this:
 
-python ossocr.py -c -s 2 -l eng page.jpg
+python ossocr.py -c True -l eng -f page.jpg
 
 where:
 
--c  
-    provide coordinates (file: coords.xml)
--s 2    
-    the original image should be doubled in size
--l eng  
-    the language to be used is english (these names are based on
-    tesseract conventions)
-page.jpg
-    the page to be OCRed
+-c
+    write coordinate information ("coords.xml" file is created)
+-f
+    specify input file, use for standalone, non-hadoop processing
+-l
+    tesseract language code
 
-By default, the raw OCR goes to a file called "ocr.txt" but this
-can be changed with the -o parameter.
+By default for standalone, the raw OCR goes to a file called "ocr.txt" 
+but this can be changed with the -o parameter.
+
+For a large number of files, hadoop is a good option for enlisting
+multiple machines to provide better throughput:
+
+hadoop jar /hadoop/contrib/streaming/hadoop-*streaming*.jar -file ./ossocr.py -mapper \
+./ossocr.py -file ./reducer.py -reducer ./reducer.py -input /home/hduser/files.txt \
+-output /home/hduser/ossocr-output
 
 It is still unclear what the optimum image processing should be
 for the most effective OCR, but the gimp script (wavelet.scm)
@@ -68,7 +73,6 @@ seem to be produce the clearest text are:
 
 gimp -i -b "(batch-wavelet-enhance \"*.JPG\" 25.0 2.0 1.0 0.75)" -b "(gimp-quit 0)"
 
-This is a work in progress, comments and suggestions welcome. This
-application will eventually be available by hadoop.
+This is a work in progress, comments and suggestions welcome. 
 
 art rhyno <http://projectconifer.ca>
