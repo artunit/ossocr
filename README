@@ -1,21 +1,12 @@
 README – Created: April 2011
-Last Revised: Sept. 2011
+Last Revised: Dec. 2011
 
-Originally, this was a combination of ocropus <http://code.google.com/p/ocropus/> 
-and tesseract <http://code.google.com/p/tesseract-ocr/>. There is a plugin
-mechanism in ocropus but I had used python-tesseract
-<http://code.google.com/p/python-tesseract/> to bring the technologies
-together. Basically, the goal was to have ocropus to do the page
-segmentation for the images but to have tesseract perform the actual OCR. In
-the process, we also want to capture coordinate information for each word for 
-use in highlighting later.
+I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
+for OCR processing, with the very handy python-tesseract 
+<http://code.google.com/p/python-tesseract/> for pulling it all together.
 
-As I have worked through preprocessing options, the segmentation has become
-less of an issue, and I am currently working tesseract for all of the 
-OCR processing.
-
-Our target has been newspaper images, which seems to stretch the limits of 
-OCR software and we have done some patching to increase parameters that
+The main target has been newspaper images, which seems to stretch the limits of 
+OCR software and there is some patching to increase parameters that
 were problematic for this kind of material, as well as to add some addition
 functionality.
 
@@ -30,8 +21,8 @@ baseapi.cpp.patch
 main_dummy.cpp.patch
 main_dummy.h.patch
 
-Assuming you have the svn versions (last used on tesseract version 625, 
-python-tesseract version 81), patching would be a process like:
+Assuming you have the svn versions (last used on tesseract version 644, 
+python-tesseract version 100), patching would be a process like:
 
 # for tesseract
 patch -p1 api/baseapi.h < /patches/baseapi.h.patch
@@ -40,6 +31,9 @@ patch -p1 api/baseapi.cpp < /patches/baseapi.cpp.patch
 # for python-tesseract
 patch -p1 main_dummy.cpp < /patches/main_dummy.cpp.patch
 patch -p1 main_dummy.h < /patches/main_dummy.h.patch
+
+Note that tesseract now uses "tesseract" instead of "tesseract_api"
+for the library name.
 
 The python application (ossocr.py) has several parameters for standalone
 processing, but is set up by default for hadoop stream processing. For
@@ -65,6 +59,21 @@ multiple machines to provide better throughput:
 hadoop jar /hadoop/contrib/streaming/hadoop-*streaming*.jar -file ./ossocr.py -mapper \
 ./ossocr.py -file ./reducer.py -reducer ./reducer.py -input /home/hduser/files.txt \
 -output /home/hduser/ossocr-output
+
+Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
+expose tesseract functions to php. The buildall script will 
+try to create all of the components but the resulting library
+(tesseract.so) will need to be referenced in the appropriate php.ini
+file.
+
+The "test.php" shows how the tesseract functions are invoked, for
+example:
+
+$mImgFile = "eurotext.tif";
+$result=tesseract::ProcessPagesWrapper($mImgFile,$api);
+printf("%s\n",$result);
+
+$lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt");
 
 It is still unclear what the optimum image processing should be
 for the most effective OCR, but the gimp script (wavelet.scm)

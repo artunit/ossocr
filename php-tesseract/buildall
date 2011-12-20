@@ -1,0 +1,35 @@
+echo "searching for Tesseract installation..."
+
+if [ -f /usr/include/tesseract/baseapi.h ]; then
+    tesseract_inst=/usr/include
+    echo "...ok"
+elif [ -f /usr/local/include/tesseract/baseapi.h ]; then
+    tesseract_inst=/usr/local/include
+    echo "...ok"
+else
+    echo "Tesseract installation was not found!"
+    break
+fi
+
+echo "searching for Leptonica installation..."
+if [ -f /usr/include/leptonica/allheaders.h ]; then
+    leptonica_inst=/usr/include
+    echo "...ok"
+elif [ -f /usr/local/include/leptonica/allheaders.h ]; then
+    leptonica_inst=/usr/local/include
+    echo "...ok"
+else
+    echo "Leptonica installation was not found!"
+    break
+fi
+
+echo "running swig"
+swig -c++ -php -cppext cxx -I. -I$tesseract_inst/tesseract -I/usr/include -I$leptonica_inst/leptonica tesseract.i
+echo "creating wrap object file"
+gcc -c -fpic tesseract_wrap.cxx -o tesseract_wrap.o -I. -I$tesseract_inst/tesseract -I/usr/include -I$leptonica_inst/leptonica `php-config --includes` 
+echo "compiling dummy"
+gcc -c -fpic main_dummy.cpp -o main_dummy.o  -I. -I$tesseract_inst/tesseract/ -I$leptonica_inst/leptonica
+echo "building library"
+gcc -shared main_dummy.o tesseract_wrap.o -o tesseract.so -lstdc++ -ltesseract -llept -L/usr/local/lib/ -L/usr/lib/
+
+echo "if the above looks ok, reference tesseract.so in php.ini"
