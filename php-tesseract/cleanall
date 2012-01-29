@@ -1,0 +1,7 @@
+#! /bin/bash
+rm *.o
+rm build -Rf
+rm *.cxx
+rm tesseract*.php*
+rm *.so
+
