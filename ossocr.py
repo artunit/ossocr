@@ -12,9 +12,11 @@ import tesseract
 import traceback
 import Image
 import sys,os,re,glob
+import urllib
+import cStringIO
 
 TEMP_DIR = "/tmp/"
-SCALE    = 2
+SCALE    = 1
 IS_VALID = re.compile('[a-z|A-Z|0-9|\.|\'|\"|\s]')
 IS_STOP  = re.compile('[\.|,|;|\s]')
 
@@ -29,9 +31,11 @@ def ocr2coords(scale, height, coordsin, coordsfile):
     x0 = y0 = x1 = y1 = 0
     tcx0 = tcy0 = tcx1 = tcy1 = 0
     xl = yl = xr = yr = 0
+    adj_y = 0
 
     infile = open(coordsin,"r")
     for line in infile:
+        #print line
         entries = line.split()
 
         stopChar = False
@@ -48,13 +52,21 @@ def ocr2coords(scale, height, coordsin, coordsfile):
 
                 #tesseract works from the bottom up for Y but we need to work from the top
                 tcy0 = height - tcy0
-                tcy1 = height - tcy1
+
+                #adjust for proportional font
+                if adj_y > tcy1:
+                    y1 = height - adj_y
+                if adj_y == 0:
+                    y1 = height - tcy1
+
+                #print "adj_y is now %d - tcy1 %d" % (adj_y,tcy1)
+                adj_y = tcy1
 
         if len(word) == 0:
             x0 = tcx0
             y0 = tcy0
             x1 = tcx1
-            y1 = tcy1
+            adj_y = 0
 
         if len(entries) == 5 and not stopChar:
             word += char
@@ -62,6 +74,7 @@ def ocr2coords(scale, height, coordsin, coordsfile):
         if (len(entries) == 4 or stopChar) and len(word) > 0:
 
             #print "%d: %d,%d,%d,%d -> %d"%(height,x0,y0,x1,y1,scale)
+
             #adjust for scale
             x0 = round(x0/scale)
             y0 = round(y0/scale)
@@ -73,6 +86,7 @@ def ocr2coords(scale, height, coordsin, coordsfile):
                     coordsfile.write("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" %
                          (x0,y1,word,xr,yl))
             word = ""
+            tcy1 = 0
 
         if not stopChar and len(entries) == 5:
            xl = round(tcx0/scale)
@@ -87,11 +101,13 @@ def ocr2coords(scale, height, coordsin, coordsfile):
 def ocr2hadoop(filename, scale, height, coordsin):
     """ Pull together coordinate information in Hadoop stream-friendly format """
 
+    char_cnt = 0
     line_cnt = 0
     char = word = ""
     x0 = y0 = x1 = y1 = 0
     tcx0 = tcy0 = tcx1 = tcy1 = 0
     xl = yl = xr = yr = 0
+    adj_y = 0
 
     infile = open(coordsin,"r")
     for line in infile:
@@ -111,16 +127,24 @@ def ocr2hadoop(filename, scale, height, coordsin):
 
                 #tesseract works from the bottom up for Y but we need to work from the top
                 tcy0 = height - tcy0
-                tcy1 = height - tcy1
+
+                #adjust for proportional font
+                if adj_y > tcy1:
+                    y1 = height - adj_y
+                if adj_y == 0:
+                    y1 = height - tcy1
+
+                adj_y = tcy1
 
         if len(word) == 0:
             x0 = tcx0
             y0 = tcy0
             x1 = tcx1
-            y1 = tcy1
+            adj_y = 0
 
         if len(entries) == 5 and not stopChar:
             word += char
+            char_cnt = char_cnt + 1
 
         if (len(entries) == 4 or stopChar) and len(word) > 0:
 
@@ -131,7 +155,7 @@ def ocr2hadoop(filename, scale, height, coordsin):
 
             #note that we swap Y values because of changing the orientation
             if x0 >= 0 and y0 >=0 and x1 >=0 and y1 >=0:
-                    print "%s_%06d\t%s\t%d\t%d\t%d\t%d" % (filename,line_cnt,word,x0,y1,xr,yl)
+                    print "%ld\t%s_%06d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,filename,line_cnt,word,x0,y1,xr,yl)
                     line_cnt = line_cnt + 1
             word = ""
 
@@ -142,7 +166,7 @@ def ocr2hadoop(filename, scale, height, coordsin):
            yr = round(tcy1/scale)
 
     if len(word) > 0:
-        print "%s_%06d\t%s\t%d\t%d\t%d\t%d" % (filename,line_cnt,word,x0,y1,xr,yl)
+        print "%ld\t%s_%06d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,filename,line_cnt,word,x0,y1,xr,yl)
 
 
 def alert(*args):
@@ -192,7 +216,13 @@ for img_name in img_source:
     if options.file:
         img = Image.open(img_name)
     else:
-        img = Image.open(TEMP_DIR + img_name)
+        #used for S3 buckets with AWS
+        if img_name.startswith('http'):
+            file = urllib.urlopen(img_name)
+            imgStrIO = cStringIO.StringIO(file.read()) # constructs a StringIO holding the image
+            img = Image.open(imgStrIO)
+        else:
+            img = Image.open(TEMP_DIR + img_name)
 
     width, height = img.size
 
