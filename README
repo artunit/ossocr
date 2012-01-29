@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: Dec. 2011
+Last Revised: Jan. 2012
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
@@ -50,6 +50,7 @@ where:
 -l
     tesseract language code
 
+
 By default for standalone, the raw OCR goes to a file called "ocr.txt" 
 but this can be changed with the -o parameter.
 
@@ -59,6 +60,22 @@ multiple machines to provide better throughput:
 hadoop jar /hadoop/contrib/streaming/hadoop-*streaming*.jar -file ./ossocr.py -mapper \
 ./ossocr.py -file ./reducer.py -reducer ./reducer.py -input /home/hduser/files.txt \
 -output /home/hduser/ossocr-output
+
+You can test streaming from the command line:
+
+cat files.txt | python ossocr.py
+cat files.txt | python ossocr.py | python reducer.py
+
+To allow some flexibility with files ramped up for OCR processing, a list of
+filenames is streamed in ("files.txt" in the example above). This is done for
+two reasons. One is that streaming in binary image data is tricky and this 
+also allows files to be assembled in a temp directory, a much needed workaround
+for processing images in the lab that I had access to for working through hadoop.
+
+The other reason is that files can be specified with an "http" or "https"
+prefix, which means they can reside ourside of local storage for processing. When
+using Amazon Elastic MapReduce, this gives some flexibility for storing files
+outside of Amazon's S3 service.
 
 Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
 expose tesseract functions to php. The buildall script will 
@@ -75,12 +92,21 @@ printf("%s\n",$result);
 
 $lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt");
 
+The php option is useful for Drupal environments and any of the many other spaces
+where php is the hammer of choice.
+
 It is still unclear what the optimum image processing should be
 for the most effective OCR, but the gimp script (wavelet.scm)
-shows the steps being tried. So far, the parameters that
-seem to be produce the clearest text are:
+shows the steps being tried for digital photos of newspaper pages, a combination
+that represents a fairly common and challenging scenario for digitization. So far, 
+the parameters that seem to be produce the clearest text are:
 
 gimp -i -b "(batch-wavelet-enhance \"*.JPG\" 25.0 2.0 1.0 0.75)" -b "(gimp-quit 0)"
+
+The success of the OCR depends almost entirely on the image being processed. In
+general, the contrast between the text and the background media seem to be the key
+parameters, scanning pages directly from analogue sources may not require much
+manipulation.
 
 This is a work in progress, comments and suggestions welcome. 
 
