@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # some common conversions if not using wavelet
 # most effective seems to be radius 50, amount 10, threshold 0 
@@ -252,8 +252,8 @@ for img_name in img_source:
     api.Init(".",options.language,tesseract.OEM_DEFAULT)
     api.SetPageSegMode(tesseract.PSM_AUTO);
 
-    result=tesseract.ProcessPagesWrapper(imgtemp.name,api) + ""
-    result = result.replace("\n","")
+    orig_result=tesseract.ProcessPagesWrapper(imgtemp.name,api) + ""
+    result = orig_result.replace("\n","")
     result = result.replace("\t","")
     result = result.strip()
 
@@ -264,7 +264,7 @@ for img_name in img_source:
 
         if options.coords or options.hadoop:
             coordtemp = tempfile.NamedTemporaryFile()
-            result = tesseract.ExtractResultsWrapper(api, coordtemp.name)
+            result = tesseract.ExtractResultsWrapper(api, coordtemp.name, len(orig_result),"")
             #print "len", result
             if options.coords:
                  ocr2coords(SCALE, height * SCALE, coordtemp.name, coordsfile)

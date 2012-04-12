@@ -1,23 +1,49 @@
---- baseapi.cpp.orig    2011-09-08 20:22:49.428765729 -0400
-+++ baseapi.cpp 2011-09-08 19:40:09.075549087 -0400
-@@ -1725,8 +1725,10 @@
+--- ../baseapi.cpp	2012-04-11 20:51:36.151211384 -0400
++++ baseapi.cpp	2012-04-11 20:38:29.983244934 -0400
+@@ -1498,16 +1498,19 @@
+ }
+ 
+ /** Sets Dict::letter_is_okay_ function to point to the given function. */
++/*
+ void TessBaseAPI::SetDictFunc(DictFunc f) {
+   if (tesseract_ != NULL) {
+     tesseract_->getDict().letter_is_okay_ = f;
+   }
+ }
++*/
+ 
+ /**
+  * Sets Dict::probability_in_context_ function to point to the given
+  * function.
+  */
++/*
+ void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
+   if (tesseract_ != NULL) {
+     tesseract_->getDict().probability_in_context_ = f;
+@@ -1518,6 +1521,7 @@
+     }
+   }
+ }
++*/
+ 
+ /** Sets Wordrec::fill_lattice_ function to point to the given function. */
+ void TessBaseAPI::SetFillLatticeFunc(FillLatticeFunc f) {
+@@ -1946,8 +1950,10 @@
  
    TESS_CHAR(float _cost, const char *repr, int len = -1) : cost(_cost) {
      length = (len == -1 ? strlen(repr) : len);
+-    unicode_repr = new char[length + 1];
+-    strncpy(unicode_repr, repr, length);
 +    if (length > 0) {
-     unicode_repr = new char[length + 1];
-     strncpy(unicode_repr, repr, length);
++      unicode_repr = new char[length + 1];
++      strncpy(unicode_repr, repr, length);
 +    }
    }
  
    TESS_CHAR() {  // Satisfies ELISTIZE.
-@@ -1754,36 +1756,93 @@
-   return rating;
- }
- 
--
- // Extract the OCR results, costs (penalty points for uncertainty),
- // and the bounding boxes of the characters.
+@@ -1980,29 +1986,92 @@
+  * and the bounding boxes of the characters.
+  */
  static void extract_result(TESS_CHAR_IT* out,
 -                           PAGE_RES* page_res) {
 -  PAGE_RES_IT page_res_it(page_res);
@@ -26,16 +52,20 @@
 +                           int** char_x0,
 +                           int** char_y0,
 +                           int** char_x1,
-+                           int** char_y1) {
++                           int** char_y1,
++                           int chars_length) {
 +
 +  char buf[100];
-+  PAGE_RES* tmp_res;
++  //PAGE_RES* tmp_res;
 +
-+  tmp_res = page_res;
++  //tmp_res = page_res;
 +  int cnt = 0;
    int word_count = 0;
+-  while (page_res_it.word() != NULL) {
 +
 +  //we need to figure out how many characters are in OCR
++  //and tmp_res->char_count is often wrong because of spacing
++  /*
 +  PAGE_RES_IT tmppage_res_it(tmp_res);
 +  while (tmppage_res_it.word() != NULL) {
 +    WERD_RES *word = tmppage_res_it.word();
@@ -49,22 +79,24 @@
 +    tmppage_res_it.forward();
 +    word_count++;
 +  }
-+    
++  */
++  
 +  //an entry for every char
-+  *char_4_coords = new char[cnt];
-+  *char_x0 = new int[cnt];
-+  *char_y0 = new int[cnt];
-+  *char_x1 = new int[cnt];
-+  *char_y1 = new int[cnt];
++/*
++  *char_4_coords = new char[chars_length];
++  *char_x0 = new int[chars_length];
++  *char_y0 = new int[chars_length];
++  *char_x1 = new int[chars_length];
++  *char_y1 = new int[chars_length];
++*/
 +   
 +  PAGE_RES_IT page_res_it(page_res);
 +  word_count = 0;
 +  cnt = 0;
-   while (page_res_it.word() != NULL) {
++  while (page_res_it.word() != NULL && cnt < chars_length) {
      WERD_RES *word = page_res_it.word();
      const char *str = word->best_choice->unichar_string().string();
      const char *len = word->best_choice->unichar_lengths().string();
-+
      TBOX real_rect = word->word->bounding_box();
  
 -    if (word_count)
@@ -78,32 +110,28 @@
 +      cnt++;
 +    }//if
      int n = strlen(len);
-+   
-     for (int i = 0; i < n; i++) {
--      TESS_CHAR *tc = new TESS_CHAR(rating_to_cost(word->best_choice->rating()),
-+   TESS_CHAR *tc = new TESS_CHAR(rating_to_cost(word->best_choice->rating()),
+-    for (int i = 0; i < n; i++) {
++    for (int i = 0; i < n; i++ && cnt < chars_length) {
+       TESS_CHAR *tc = new TESS_CHAR(rating_to_cost(word->best_choice->rating()),
                                      str, *len);
--      tc->box = real_rect.intersection(word->box_word->BlobBox(i));
--      out->add_after_then_move(tc);
--       str += *len;
--      len++;
--    }
-+   tc->box = real_rect.intersection(word->box_word->BlobBox(i));
+       tc->box = real_rect.intersection(word->box_word->BlobBox(i));
 +    
-+   (*char_4_coords)[cnt] = tc->unicode_repr[0];
-+   (*char_x0)[cnt] = tc->box.left();
-+       (*char_y0)[cnt] = tc->box.bottom();
-+   (*char_x1)[cnt] = tc->box.right();
-+   (*char_y1)[cnt] = tc->box.top();
-+   /*
-+   printf("new track: %d = %c: %d %d %d %d\n",cnt,(*char_4_coords)[cnt],(*char_x0)[cnt],
-+       (*char_y0)[cnt],(*char_x1)[cnt],(*char_y1)[cnt]);
-+   */
++      (*char_4_coords)[cnt] = tc->unicode_repr[0];
++      (*char_x0)[cnt] = tc->box.left();
++      (*char_y0)[cnt] = tc->box.bottom();
++      (*char_x1)[cnt] = tc->box.right();
++      (*char_y1)[cnt] = tc->box.top();
++      /*
++      printf("new track: %d = %c: %d %d %d %d\n",cnt,(*char_4_coords)[cnt],(*char_x0)[cnt],
++        (*char_y0)[cnt],(*char_x1)[cnt],(*char_y1)[cnt]);
++      */
 +        
-+   out->add_after_then_move(tc);
-+   str += *len;
-+   cnt++;
-+   len++;
+       out->add_after_then_move(tc);
+-       str += *len;
++      str += *len;
++      cnt++;
+       len++;
+-    }
 +    }//for
 +   
 +    (*char_4_coords)[cnt] = '\0';
@@ -113,31 +141,30 @@
 +  }//while
  }
  
--
- // Extract the OCR results, costs (penalty points for uncertainty),
- // and the bounding boxes of the characters.
- int TessBaseAPI::TesseractExtractResult(char** text,
-@@ -1793,10 +1852,18 @@
+ /**
+@@ -2016,10 +2085,19 @@
                                          int** y0,
                                          int** x1,
                                          int** y1,
-+                                       char** char_4_coords,
-+                                       int** char_x0,
-+                                       int** char_y0,
-+                                       int** char_x1,
-+                                       int** char_y1,
-                                         PAGE_RES* page_res) {
+-                                        PAGE_RES* page_res) {
++                                        char** char_4_coords,
++                                        int** char_x0,
++                                        int** char_y0,
++                                        int** char_x1,
++                                        int** char_y1,
++                                        PAGE_RES* page_res,
++                                        int chars_length) {
    TESS_CHAR_LIST tess_chars;
    TESS_CHAR_IT tess_chars_it(&tess_chars);
 -  extract_result(&tess_chars_it, page_res);
 +
 +  extract_result(&tess_chars_it, page_res, char_4_coords,
-+   char_x0, char_y0, char_x1, char_y1);
++    char_x0, char_y0, char_x1, char_y1, chars_length);
 +
    tess_chars_it.move_to_first();
    int n = tess_chars.length();
    int text_len = 0;
-@@ -1813,11 +1880,12 @@
+@@ -2036,11 +2114,12 @@
      TESS_CHAR *tc = tess_chars_it.data();
      text_len += (*lengths)[i] = tc->length;
      (*costs)[i] = tc->cost;

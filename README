@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: Jan. 2012
+Last Revised: April 2012
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
@@ -20,8 +20,9 @@ baseapi.cpp.patch
 # for python-tesseract
 main_dummy.cpp.patch
 main_dummy.h.patch
+tesseract.i.patch
 
-Assuming you have the svn versions (last used on tesseract version 644, 
+Assuming you have the svn versions (last used on tesseract version 719, 
 python-tesseract version 100), patching would be a process like:
 
 # for tesseract
@@ -31,6 +32,7 @@ patch -p1 api/baseapi.cpp < /patches/baseapi.cpp.patch
 # for python-tesseract
 patch -p1 main_dummy.cpp < /patches/main_dummy.cpp.patch
 patch -p1 main_dummy.h < /patches/main_dummy.h.patch
+patch -p1 tesseract.i < /patches/tesseract.i.patch
 
 Note that tesseract now uses "tesseract" instead of "tesseract_api"
 for the library name.
@@ -90,7 +92,7 @@ $mImgFile = "eurotext.tif";
 $result=tesseract::ProcessPagesWrapper($mImgFile,$api);
 printf("%s\n",$result);
 
-$lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt");
+$lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt", strlen($result), "");
 
 The php option is useful for Drupal environments and any of the many other spaces
 where php is the hammer of choice.

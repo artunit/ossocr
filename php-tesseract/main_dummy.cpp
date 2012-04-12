@@ -1,4 +1,3 @@
-#include "mfcpch.h"
 // #define USE_VLD //Uncomment for Visual Leak Detector.
 #if (defined _MSC_VER && defined USE_VLD)
 #include <vld.h>
@@ -18,8 +17,6 @@
 #include "baseapi.h"
 #include "ctype.h"
 #include "strngs.h"
-#include "tprintf.h"
-#include "tesseractmain.h"
 #ifdef __darwin__
 	#include "fmemopen.h"
 #endif
@@ -162,9 +159,9 @@ char* ProcessPagesRaw(const char* image,tesseract::TessBaseAPI* api) {
  }
 
 /*
-	Special function for Discovery Garden and Our Ontario
+        Special function for DiscoveryGarden and OurDigitalWorld
 */
-int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile) {
+int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile, int chars_limit, char *valid_chars) {
     char *words;
     int *lengths;
     float *costs;
@@ -178,29 +175,34 @@ int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile) {
     int *char_x1;
     int *char_y1;
 
-    //this is lame - but will have to revisit when we figure out what characters JSON trips on
-    const char *valid_characters = " .,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#^&*()-_+=:;{}[]|?";
-
+    //allocate space here, we know the number of chars at this point
+    char_4_coords = new char[chars_limit];
+    char_x0 = new int[chars_limit];
+    char_y0 = new int[chars_limit];
+    char_x1 = new int[chars_limit];
+    char_y1 = new int[chars_limit];
 
     //the all important call
     api->TesseractExtractResult(&words, &lengths, &costs,
         &x0, &y0, &x1, &y1,&char_4_coords,&char_x0,&char_y0,
-	    &char_x1,&char_y1,api->page_res_);
+        &char_x1,&char_y1,api->page_res_, chars_limit);
 
     FILE *coordfile = NULL;
     coordfile = fopen(outfile, "w");
 
     int wordsLen = strlen(char_4_coords);
-
-    int tmpCnt = 0;
+    int tmp_cnt = 0;
 
     for (int i = 0; i < wordsLen; i++) {
-	    if (strchr(valid_characters,char_4_coords[i]))
-            fprintf(coordfile,"%c %d %d %d %d\n",char_4_coords[i],char_x0[i],char_y0[i],char_x1[i],char_y1[i]);
+       if (strlen(valid_chars) == 0 || strchr(valid_chars,char_4_coords[i])) {
+          fprintf(coordfile,"%c %d %d %d %d\n",char_4_coords[i],char_x0[i],
+             char_y0[i],char_x1[i],char_y1[i]);
+          tmp_cnt++;
+       }//if
     }//for
-            
+
     fclose(coordfile);
 
-    return wordsLen;
+    return tmp_cnt;
 }
 

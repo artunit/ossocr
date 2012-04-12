@@ -18,7 +18,7 @@ print("now try to do ocr\n");
 $result=tesseract::ProcessPagesWrapper($mImgFile,$api);
 printf("%s\n",$result);
 
-$lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt");
+$lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt", strlen($result),"");
 printf("%d\n", $lenresult);
 
 ?>
