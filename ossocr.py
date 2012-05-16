@@ -18,7 +18,8 @@ import cStringIO
 TEMP_DIR = "/tmp/"
 SCALE    = 1
 IS_VALID = re.compile('[a-z|A-Z|0-9|\.|\'|\"|\s]')
-IS_STOP  = re.compile('[\.|,|;|\s]')
+#IS_STOP  = re.compile('[\.|,|;|\s]')
+IS_STOP  = re.compile('\s')
 
 def coordsheader(coordfile):
     coordfile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
@@ -40,11 +41,16 @@ def ocr2coords(scale, height, coordsin, coordsfile):
 
         stopChar = False
 
-        if len(entries) == 5:
-            char = entries[0]
+        #drop anything that can't be encoded
+        try:
+            char = entries[0].encode('utf-8',errors='strict')
+        except:
+            char = ''
 
+        if len(entries) == 5 and len (char) > 0:
             stopChar = re.search(IS_STOP, char)
             if not stopChar:
+
                 tcx0 = int(entries[1])
                 tcy0 = int(entries[2])
                 tcx1 = int(entries[3])
@@ -54,7 +60,7 @@ def ocr2coords(scale, height, coordsin, coordsfile):
                 tcy0 = height - tcy0
 
                 #adjust for proportional font
-                if adj_y > tcy1:
+                if adj_y < tcy1:
                     y1 = height - adj_y
                 if adj_y == 0:
                     y1 = height - tcy1
@@ -98,11 +104,11 @@ def ocr2coords(scale, height, coordsin, coordsfile):
         coordsfile.write("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" %
             (x0,y1,word,xr,yl))
 
-def ocr2hadoop(filename, scale, height, coordsin):
+def ocr2hadoop(filename, scale, height, coordsin, img_width, img_height):
     """ Pull together coordinate information in Hadoop stream-friendly format """
 
     char_cnt = 0
-    line_cnt = 0
+    word_cnt = 0
     char = word = ""
     x0 = y0 = x1 = y1 = 0
     tcx0 = tcy0 = tcx1 = tcy1 = 0
@@ -113,61 +119,83 @@ def ocr2hadoop(filename, scale, height, coordsin):
     for line in infile:
         entries = line.split()
 
+        #drop anything that can't be encoded
+        try:
+            char = entries[0].encode('utf-8',errors='strict')
+        except:
+            char = ''
+
         stopChar = False
 
-        if len(entries) == 5:
-            char = entries[0]
+        if len(char) > 0:
+            if len(entries) == 5:
+               print "%ld\t%s_%d_%d_%010d_%015ld\t%s\t%d\t%d\t%d\t%d" % (char_cnt,
+                     filename,img_width,img_height,
+                     word_cnt,char_cnt,char, 
+                     round(int(entries[1])/scale),
+                     round(int(entries[2])/scale),
+                     round(int(entries[3])/scale),
+                     round(int(entries[4])/scale))
+               char_cnt += 1
 
-            stopChar = re.search(IS_STOP, char)
-            if not stopChar:
-                tcx0 = int(entries[1])
-                tcy0 = int(entries[2])
-                tcx1 = int(entries[3])
-                tcy1 = int(entries[4])
+               stopChar = re.search(IS_STOP, char)
+               if not stopChar:
+                  tcx0 = int(entries[1])
+                  tcy0 = int(entries[2])
+                  tcx1 = int(entries[3])
+                  tcy1 = int(entries[4])
 
-                #tesseract works from the bottom up for Y but we need to work from the top
-                tcy0 = height - tcy0
+                  #tesseract works from the bottom up for Y but we need to work from the top
+                  tcy0 = height - tcy0
 
-                #adjust for proportional font
-                if adj_y > tcy1:
-                    y1 = height - adj_y
-                if adj_y == 0:
-                    y1 = height - tcy1
+                  #adjust for proportional font
+                  if adj_y < tcy1:
+                     # print "LESSER - %d %d" % (adj_y,tcy1)
+                     y1 = height - adj_y
+                  if adj_y == 0:
+                     # print "IS ZERO"
+                     y1 = height - tcy1
 
-                adj_y = tcy1
+                  adj_y = tcy1
+                  # print "%s %s %d %d %d %d %d %d" % (word,char,tcx0,tcy0,tcx1,tcy1,adj_y,y1)
 
-        if len(word) == 0:
-            x0 = tcx0
-            y0 = tcy0
-            x1 = tcx1
-            adj_y = 0
+            if len(word) == 0:
+               x0 = tcx0
+               y0 = tcy0
+               x1 = tcx1
 
-        if len(entries) == 5 and not stopChar:
-            word += char
-            char_cnt = char_cnt + 1
 
-        if (len(entries) == 4 or stopChar) and len(word) > 0:
+            if len(entries) == 5 and not stopChar:
+               word += char
+                
+            if len(entries) == 4:
+               print "%ld\t%s_%d_%d_%010d_%015ld\tspace\t0\t0\t0\t0" % (char_cnt,
+                     filename,img_width,img_height,word_cnt,char_cnt)
+               char_cnt += 1
 
-            x0 = round(x0/scale)
-            y0 = round(y0/scale)
-            x1 = round(x1/scale)
-            y1 = round(y1/scale)
+            if (len(entries) == 4 or stopChar) and len(word) > 0:
+               x0 = round(x0/scale)
+               y0 = round(y0/scale)
+               x1 = round(x1/scale)
+               y1 = round(y1/scale)
 
-            #note that we swap Y values because of changing the orientation
-            if x0 >= 0 and y0 >=0 and x1 >=0 and y1 >=0:
-                    print "%ld\t%s_%06d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,filename,line_cnt,word,x0,y1,xr,yl)
-                    line_cnt = line_cnt + 1
-            word = ""
+               #note that we swap Y values because of changing the orientation
+               if x0 >= 0 and y0 >=0 and x1 >=0 and y1 >=0:
+                  print "%ld\t%s_%d_%d_%010d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,
+                          filename,img_width,img_height,word_cnt,word,x0,y1,xr,yl)
+                  adj_y = 0
+                  word_cnt += 1
+               word = ""
 
-        if not stopChar and len(entries) == 5:
-           xl = round(tcx0/scale)
-           xr = round(tcx1/scale)
-           yl = round(tcy0/scale)
-           yr = round(tcy1/scale)
+            if not stopChar and len(entries) == 5:
+               xl = round(tcx0/scale)
+               xr = round(tcx1/scale)
+               yl = round(tcy0/scale)
+               yr = round(tcy1/scale)
 
     if len(word) > 0:
-        print "%ld\t%s_%06d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,filename,line_cnt,word,x0,y1,xr,yl)
-
+        print "%ld\t%s_%d_%d_%010d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,filename,
+               img_width,img_height,word_cnt,word,x0,y1,xr,yl)
 
 def alert(*args):
     sys.stderr.write(" ".join([str(x) for x in args]))
@@ -269,7 +297,7 @@ for img_name in img_source:
             if options.coords:
                  ocr2coords(SCALE, height * SCALE, coordtemp.name, coordsfile)
             else:
-                 ocr2hadoop(img_name, SCALE, height * SCALE, coordtemp.name)
+                 ocr2hadoop(img_name, SCALE, height * SCALE, coordtemp.name, width, height)
 
     if options.file:
         file.close()

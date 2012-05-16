@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: April 2012
+Last Revised: May 2012
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
@@ -22,7 +22,7 @@ main_dummy.cpp.patch
 main_dummy.h.patch
 tesseract.i.patch
 
-Assuming you have the svn versions (last used on tesseract version 719, 
+Assuming you have the svn versions (last used on tesseract version 725, 
 python-tesseract version 100), patching would be a process like:
 
 # for tesseract
@@ -78,6 +78,10 @@ The other reason is that files can be specified with an "http" or "https"
 prefix, which means they can reside ourside of local storage for processing. When
 using Amazon Elastic MapReduce, this gives some flexibility for storing files
 outside of Amazon's S3 service.
+
+The "sortout.py" script will take the results and create XML file with
+the coordinates of each word, and, optionally, a box file for coordinates as well as an
+hOCR file. The pixel gaps to define a new column and line can be set as parameters.
 
 Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
 expose tesseract functions to php. The buildall script will 
