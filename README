@@ -59,8 +59,12 @@ but this can be changed with the -o parameter.
 For a large number of files, hadoop is a good option for enlisting
 multiple machines to provide better throughput:
 
-hadoop jar /hadoop/contrib/streaming/hadoop-*streaming*.jar -file ./ossocr.py -mapper \
-./ossocr.py -file ./reducer.py -reducer ./reducer.py -input /home/hduser/files.txt \
+hadoop jar /hadoop/contrib/streaming/hadoop-*streaming*.jar \
+-file ./ossocr.py \
+-mapper ./ossocr.py \
+-file ./reducer.py \
+-reducer ./reducer.py \
+-input /home/hduser/files.txt \
 -output /home/hduser/ossocr-output
 
 You can test streaming from the command line:
@@ -80,8 +84,9 @@ using Amazon Elastic MapReduce, this gives some flexibility for storing files
 outside of Amazon's S3 service.
 
 The "sortout.py" script will take the results and create XML file with
-the coordinates of each word, and, optionally, a box file for coordinates as well as an
-hOCR file. The pixel gaps to define a new column and line can be set as parameters.
+the coordinates of each word, and, optionally, a box file for coordinates as well 
+as an hOCR file. The pixel gaps to define a new column and line can be set as 
+parameters.
 
 Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
 expose tesseract functions to php. The buildall script will 
