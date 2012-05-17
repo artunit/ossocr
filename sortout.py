@@ -148,9 +148,15 @@ for line in file:
         utf_char_or_word = ''
 
     file_parts = fileinfo.split('_')
-    #print "file", file_parts[0]
-    stub, img_type = file_parts[0].split(".",1)
-    #print "%s %s" % (stub,img_type)
+    file_str = file_parts[0]
+
+    #if the file is a URL, get name after last slash
+    if file_str.startswith('http'):
+       last_slash = file_str.rfind('/')
+       if last_slash > -1:
+          last_slash+=1
+          file_str = file_str[last_slash:]
+    stub, img_type = file_str.split(".",1)
 
     if stub != last_file:
        width = int(file_parts[1])
@@ -162,7 +168,7 @@ for line in file:
        xml_file = open(stub + ".xml", 'w')
        xmlheader(xml_file)
 
-       if options.box:
+       if options.box is True:
           if last_file != "@@@":
              box_file.close()
           box_file = open(stub + ".box", 'w') 
