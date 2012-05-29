@@ -22,7 +22,7 @@ main_dummy.cpp.patch
 main_dummy.h.patch
 tesseract.i.patch
 
-Assuming you have the svn versions (last used on tesseract version 725, 
+Assuming you have the svn versions (last used on tesseract version 729, 
 python-tesseract version 100), patching would be a process like:
 
 # for tesseract
