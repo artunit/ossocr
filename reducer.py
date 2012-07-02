@@ -1,5 +1,12 @@
 #!/usr/bin/python
 
+"""
+reducer.py - take hadoop output and simplify results
+- art rhyno <http://projectconifer.ca/>
+
+(c) Copyright GNU General Public License (GPL)
+"""
+
 import sys
 
 # input comes from STDIN for hadoop processing
