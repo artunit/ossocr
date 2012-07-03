@@ -70,7 +70,7 @@ def ocr2coords(filename, scale, height, coordsin, coordsfile,
     x0 = y0 = x1 = y1 = 0
     coord_x0 = coord_y0 = coord_x1 = coord_y1 = 0
     tcx0 = tcy0 = tcx1 = tcy1 = 0
-    xl = yl = xr = yr = 0
+    xr = yr = 0
 
     infile = open(coordsin,"r")
     if pg_box and coordsfile is None:
@@ -108,24 +108,22 @@ def ocr2coords(filename, scale, height, coordsin, coordsfile,
 
                stopChar = re.search(IS_STOP, char)
                if not stopChar:
-                  tcx0 = coord_x0
-                  tcy0 = coord_y0
-                  tcx1 = coord_x1
-                  tcy1 = coord_y1
-
                   #tesseract works from the bottom up for Y but we need to work from the top
-                  tcy1 = height - tcy1
+                  tcx0 = coord_x0
+                  tcy0 = img_height - coord_y0
+                  tcx1 = coord_x1
+                  tcy1 = img_height - coord_y1
 
-                  #adjust for proportional font
-                  if (height - tcy0) < y0 and (height - tcy0) > 0:
-                     y0 = height - tcy0
-                  if y0 == 0:
-                     y0 = height - tcy0
+                  #adjust for proportional font on top and bottom
+                  if y1 > tcy1:
+                     tcy1 = y1
+                  if y0 == 0 or tcy0 < y0: 
+                     y0 = tcy0
+                  y1 = tcy1
 
             if len(word) == 0:
                x0 = tcx0
                x1 = tcx1
-               y1 = tcy1
 
             if len(entries) == 5 and not stopChar:
                word += char
@@ -137,11 +135,6 @@ def ocr2coords(filename, scale, height, coordsin, coordsfile,
                char_cnt += 1
 
             if (len(entries) == 4 or stopChar) and len(word) > 0:
-               x0 = round(x0/scale)
-               y0 = round(y0/scale)
-               x1 = round(x1/scale)
-               y1 = round(y1/scale)
-
                if x0 >= 0 and y0 >=0 and x1 >=0 and y1 >=0:
                   if coordsfile: 
                      coordsfile.write("<word x1=\"%d\" y1=\"%d\">\n%s\n<ends x2=\"%d\" y2=\"%d\"/>\n</word>\n" %
@@ -150,12 +143,13 @@ def ocr2coords(filename, scale, height, coordsin, coordsfile,
                      print "%ld\t%s_%d_%d_%010d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,
                          filename,img_width,img_height,word_cnt,word,x0,y0,xr,yr)
                   y0 = 0
+                  y1 = 0
                   word_cnt += 1
                word = ""
 
             if not stopChar and len(entries) == 5:
-               xr = round(tcx1/scale)
-               yr = round(tcy1/scale)
+               xr = tcx1
+               yr = tcy1
 
     if len(word) > 0:
        if coordsfile:
@@ -163,7 +157,8 @@ def ocr2coords(filename, scale, height, coordsin, coordsfile,
                (x0,y0,word,xr,yr))
        else:
           print "%ld\t%s_%d_%d_%010d\t%s\t%d\t%d\t%d\t%d" % (char_cnt,filename,
-               img_width,img_height,word_cnt,word,x0,y0,xr,yl)
+               img_width,img_height,word_cnt,word,x0,y0,xr,yr)
+
     return char_cnt, word_cnt
 
 """ utility alert function """
