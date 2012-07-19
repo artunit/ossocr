@@ -37,7 +37,7 @@ patch -p1 tesseract.i < /patches/tesseract.i.patch
 Note that tesseract now uses "tesseract" instead of "tesseract_api"
 for the library name.
 
-The python application (ossocr.py) has several parameters for standalone
+The main python application (ossocr.py) has several parameters for standalone
 processing, but is set up by default for hadoop stream processing. For
 standalone and testing, you probably want something like this:
 
@@ -86,6 +86,11 @@ The "sortout.py" script will take the results and create XML file with
 the coordinates of each word, and, optionally, a box file for coordinates as well 
 as an hOCR file. The pixel gaps to define a new column and line can be set as 
 parameters.
+
+The "wcols.py" script is a simple attempt to identify columns that are not
+based on lines, like the line segment application described below. The results
+are disappointing for slanted images, but I include the script in case it
+might be useful to someone else.
 
 Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
 expose tesseract functions to php. The buildall script will 
