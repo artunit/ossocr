@@ -22,8 +22,8 @@ main_dummy.cpp.patch
 main_dummy.h.patch
 tesseract.i.patch
 
-Assuming you have the svn versions (last used on tesseract version 729, 
-python-tesseract version 100), patching would be a process like:
+Assuming you have the svn versions of tesseract (last used on tesseract 
+version 778), and python-tesseract (version 100), patching would be a process like:
 
 # for tesseract
 patch -p1 api/baseapi.h < /patches/baseapi.h.patch
@@ -92,6 +92,10 @@ based on lines, like the line segment application described below. The results
 are disappointing for slanted images, but I include the script in case it
 might be useful to someone else.
 
+Possibly the most impressive image manipulation is available via the Olena
+project <http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome/>, this
+is the path I would like to pursue.
+
 Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
 expose tesseract functions to php. The buildall script will 
 try to create all of the components but the resulting library
@@ -128,7 +132,7 @@ the ossocr.py script will look for a file with a ".txt" extension and try to use
 determine lines and squares on a page. Otherwise, there are several parameters for 
 lines support. There are other line detection options, including within the tesseract
 code base, but the Line Segment Detector is usually quite effective for almost any
-image. 
+image that uses lines for column identification. 
 
 The success of the OCR depends almost entirely on the image being processed. In
 general, the contrast between the text and the background media seem to be the key
