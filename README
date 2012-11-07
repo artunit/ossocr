@@ -134,6 +134,10 @@ lines support. There are other line detection options, including within the tess
 code base, but the Line Segment Detector is usually quite effective for almost any
 image that uses lines for column identification. 
 
+Olena can do this even more accurately. I intend to add support for the PAGE
+format <http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/> which
+Olena produces.
+
 The success of the OCR depends almost entirely on the image being processed. In
 general, the contrast between the text and the background media seem to be the key
 parameters, scanning pages directly from analogue sources may not require much
