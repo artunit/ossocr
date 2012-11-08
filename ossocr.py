@@ -8,6 +8,8 @@ ossocr.py - work with tesseract api for extracting coordinates in a hadoop-frien
 """
 
 from array import array
+from xml.etree import ElementTree as ET
+
 import json, os, tempfile
 import tesseract
 import traceback
@@ -18,6 +20,7 @@ import cStringIO
 
 TEMP_DIR = "/tmp/"
 SCALE    = 1
+NAMESPACE = 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19'
 IS_VALID = re.compile('[a-z|A-Z|0-9|\.|\'|\"|\s]')
 IS_STOP  = re.compile('\s')
 #IS_STOP  = re.compile('[\.|,|;|\s]')
@@ -166,6 +169,34 @@ def alert(*args):
     sys.stderr.write(" ".join([str(x) for x in args]))
     sys.stderr.write("\n")
 
+
+""" pull together squares from PAGE file """
+def sortOutPAGE(PAGEfile,elemName):
+    img_squares = []
+    tree = ET.ElementTree(file=PAGEfile)
+    for elem in tree.iterfind('.//{%s}%s' % (NAMESPACE,elemName)):
+        for coordElem in elem.iterfind('{%s}Coords' % NAMESPACE):
+            x0 = 0
+            y0 = 0
+            x1 = 0
+            y1 = 0
+
+            for pointElem in coordElem.iterfind('{%s}Point' % NAMESPACE):
+                this_x = int(pointElem.attrib['x'])
+                this_y = int(pointElem.attrib['y'])
+                
+                if this_x < x0 or x0 == 0:
+                    x0 = this_x
+                if this_y < y0 or y0 == 0:
+                   y0 = this_y
+                if this_x > x1:
+                   x1 = this_x
+                if this_y > y1:
+                   y1 = this_y
+            #print x0,y0,x1,y1
+            img_squares.append(page_square(x0,y0,x1,y1))
+
+    return img_squares
 
 """ combine segs based on ident """
 def sortOutSegs(lines,ident,x0,y0,x1,y1,size):
@@ -390,6 +421,7 @@ Possible choices are:
 --coords -- write coordinate information
 --output -- specify output file, defaults to ocr.txt
 --lines -- specify lines segment file
+--PAGE -- specify xml file conforming to PAGE schema (Olena for example)
 --line_gap -- specify gap value for combining lines
 --box_threshold -- smallest height for box
 --col_threshold -- smallest width for column
@@ -411,6 +443,7 @@ parser.add_option("-c","--coords",help="write coordinates in XML",default=False)
 parser.add_option("-g","--hadoop",help="write coordinates information in hadoop grid format",default=True)
 parser.add_option("-o","--output",help="specify output file",default="ocr.txt")
 parser.add_option("-d","--lines",help="specify lines segment file",default=None)
+parser.add_option("-p","--PAGE",help="specify PAGE xml file",default=None)
 parser.add_option("-e","--line_gap",help="specify gap value for combining lines",default=75)
 parser.add_option("-b","--box_threshold",help="smallest height for box",default=10)
 parser.add_option("-u","--col_threshold",help="smallest width for column",default=200)
@@ -468,7 +501,7 @@ for img_name in img_source:
 
     pg_squares = []
     pg_squares.append(page_square(0,0,width,height))
-    if options.hadoop is True or options.lines:
+    if options.hadoop is True or options.lines or options.PAGE:
        img_info = img_name.split('.')
        img_base = img_info[0]
        if os.path.isfile(TEMP_DIR + img_base + ".txt"):
@@ -476,6 +509,13 @@ for img_name in img_source:
              options.line_gap,options.col_threshold,options.v_threshold,options.h_threshold,
              options.l_margin,options.r_margin,options.angle_div,options.comb_num,
              options.skip_threshold)
+       if os.path.isfile(TEMP_DIR + img_base + ".xml"):
+          pg_squares = sortOutPAGE(TEMP_DIR + img_base + ".xml","TextRegion")
+          pg_squares.extend(sortOutPAGE(TEMP_DIR + img_base + ".xml","ImageRegion"))
+          #sort from bottom to top
+          tmp_squares = sorted(pg_squares, key=lambda seg: seg.y0)
+          #now sort from left to right
+          pg_squares = sorted(tmp_squares, key=lambda seg: seg.x0)
 
     api=tesseract.TessBaseAPI()
     api.SetOutputName("outputName")

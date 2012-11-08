@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: July 2012
+Last Revised: November 2012
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
@@ -23,7 +23,7 @@ main_dummy.h.patch
 tesseract.i.patch
 
 Assuming you have the svn versions of tesseract (last used on tesseract 
-version 778), and python-tesseract (version 100), patching would be a process like:
+version 806), and python-tesseract (version 100), patching would be a process like:
 
 # for tesseract
 patch -p1 api/baseapi.h < /patches/baseapi.h.patch
@@ -87,15 +87,6 @@ the coordinates of each word, and, optionally, a box file for coordinates as wel
 as an hOCR file. The pixel gaps to define a new column and line can be set as 
 parameters.
 
-The "wcols.py" script is a simple attempt to identify columns that are not
-based on lines, like the line segment application described below. The results
-are disappointing for slanted images, but I include the script in case it
-might be useful to someone else.
-
-Possibly the most impressive image manipulation is available via the Olena
-project <http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome/>, this
-is the path I would like to pursue.
-
 Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
 expose tesseract functions to php. The buildall script will 
 try to create all of the components but the resulting library
@@ -134,9 +125,17 @@ lines support. There are other line detection options, including within the tess
 code base, but the Line Segment Detector is usually quite effective for almost any
 image that uses lines for column identification. 
 
-Olena can do this even more accurately. I intend to add support for the PAGE
-format <http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/> which
-Olena produces.
+The "wcols.py" script is a simple attempt to identify columns that are not
+based on lines, like the line segment application described below. The results
+are disappointing for slanted images, but I include the script in case it
+might be useful to someone else.
+
+The most impressive image manipulation is available via the Olena
+project <http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome/>, there
+is now support for utilizing Olena via the PAGE format 
+<http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/> which
+Olena produces. Like using the Line Segment Detector, the ossocr.py script
+will look for a file with a ".xml" extension.
 
 The success of the OCR depends almost entirely on the image being processed. In
 general, the contrast between the text and the background media seem to be the key
