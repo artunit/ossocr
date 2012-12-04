@@ -149,7 +149,7 @@ def deDupWords(ocr_words):
     num_words = len(ocr_words)
     last_box = (0,0,0,0)
     for idx, ocr_word in enumerate(ocr_words):
-        if idx > 0 and (idx + 1) < num_words and len(ocr_word.hocr_word.strip()) > 0:
+        if hasattr(ocr_word, 'hocr_word') and idx > 0 and (idx + 1) < num_words and len(ocr_word.hocr_word.strip()) > 0:
            num = idx - 1
            if ocr_word.x0 in range(ocr_words[num].x0-2,ocr_words[num].x0+2):
               if ocr_word.y0 in range(ocr_words[num].y0-2,ocr_words[num].y0+2):
@@ -157,15 +157,16 @@ def deDupWords(ocr_words):
                     if ocr_word.y1 in range(ocr_words[num].y1-2,ocr_words[num].y1+2):
                        this_box = ocr_word.x0 + ocr_word.y0 + ocr_word.x1 + ocr_word.y1
                        if (this_box + 10) >= last_box or (this_box - 10) <= last_box:
-                          if len(ocr_words[num].hocr_word) < len(ocr_word.hocr_word):
-                             non_uniq_words.append(ocr_word)
-                             non_uniq_words_hocr.append(hOCR_Word(ocr_word.hocr_word,ocr_word.x0,ocr_word.y0,ocr_word.x1,ocr_word.y1))
-                          else:
-                             non_uniq_words.append(ocr_words[num])
-                             non_uniq_words_hocr.append(hOCR_Word(ocr_words[num].hocr_word,ocr_words[num].x0,ocr_words[num].y0,ocr_words[num].x1,ocr_words[num].y1))
-                          non_uniq_words[len(non_uniq_words) -1].dup = 1
-                          non_uniq_words_hocr[len(non_uniq_words_hocr) -1].dup = 1
-                          last_box = ocr_word.x0+ocr_word.y0+ocr_word.x1+ocr_word.y1
+                          if hasattr(ocr_words[num],'hocr_word'):
+                             if len(ocr_words[num].hocr_word) < len(ocr_word.hocr_word):
+                                 non_uniq_words.append(ocr_word)
+                                 non_uniq_words_hocr.append(hOCR_Word(ocr_word.hocr_word,ocr_word.x0,ocr_word.y0,ocr_word.x1,ocr_word.y1))
+                             else:
+                                non_uniq_words.append(ocr_words[num])
+                                non_uniq_words_hocr.append(hOCR_Word(ocr_words[num].hocr_word,ocr_words[num].x0,ocr_words[num].y0,ocr_words[num].x1,ocr_words[num].y1))
+                             non_uniq_words[len(non_uniq_words) -1].dup = 1
+                             non_uniq_words_hocr[len(non_uniq_words_hocr) -1].dup = 1
+                             last_box = ocr_word.x0+ocr_word.y0+ocr_word.x1+ocr_word.y1
     #we need two copies
     return non_uniq_words, non_uniq_words_hocr
 
@@ -216,11 +217,11 @@ def sortOutOcr(stub,img_type,inocr_chars,inocr_words,width,height):
        xmlheader(xml_file)
        for pg_col in pg_cols:
            for ocr_word in ocr_words:
-               if len(ocr_word.hocr_word.strip()) > 0:
+               if hasattr(ocr_word,'hocr_word') and len(ocr_word.hocr_word.strip()) > 0:
                   if ocr_word.x0 >= pg_col.x0 and ocr_word.y0 >= pg_col.y0:
                      if ocr_word.x1 <= pg_col.x1 and ocr_word.y1 <= pg_col.y1:
                         if checkForDups(ocr_word,non_unique_words) is False:
-                           xml_file.write("<word> x1=\"%d\" y1=\"%d\">\n" % (ocr_word.x0,ocr_word.y0))
+                           xml_file.write("<word x1=\"%d\" y1=\"%d\">\n" % (ocr_word.x0,ocr_word.y0))
                            xml_file.write("%s\n" % (ocr_word.hocr_word))
                            xml_file.write("<ends x2=\"%d\" y2=\"%d\"/>\n" % (ocr_word.x1,ocr_word.y1))
                            xml_file.write("</word>\n")
@@ -233,7 +234,7 @@ def sortOutOcr(stub,img_type,inocr_chars,inocr_words,width,height):
           for pg_col in pg_cols:
               for ocr_char in ocr_chars:
                   if ocr_char.x0 >= pg_col.x0 and ocr_char.y0 >= pg_col.y0:
-                     if ocr_char.x1 <= pg_col.x1 and ocr_char.y1 <= pg_col.y1:
+                     if hasattr(ocr_char,'ocr_char') and ocr_char.x1 <= pg_col.x1 and ocr_char.y1 <= pg_col.y1:
                         out_line = ("%s %d %d %d %d 0\n" % (ocr_char.ocr_char,
                            ocr_char.x0,ocr_char.y0,ocr_char.x1,ocr_char.y1))
                         box_file.write(out_line)
@@ -256,7 +257,7 @@ def sortOutOcr(stub,img_type,inocr_chars,inocr_words,width,height):
               last_word = ""
 
               for ocr_word in ocr_words:
-                  if (len(ocr_word.hocr_word.strip()) > 0 and ocr_word.x0 >= pg_col.x0 
+                  if (hasattr(ocr_word,'hocr_word') and len(ocr_word.hocr_word.strip()) > 0 and ocr_word.x0 >= pg_col.x0 
                      and ocr_word.y0 >= pg_col.y0
                   ):
                      if ocr_word.x1 <= pg_col.x1 and ocr_word.y1 <= pg_col.y1:
@@ -402,13 +403,16 @@ for line in file:
           file_str = file_str[last_slash:]
     stub, img_type = file_str.split(".",1)
 
+    #print "last_file", last_file
+    #print "stub",stub
     if stub != last_file:
+       if last_file != "@@@":
+          #print "now stub", stub
+          sortOutOcr(last_file,img_type,ocr_chars,ocr_words,width,height)
+          ocr_words = ocr_chars = []
+
        width = int(file_parts[1])
        height = int(file_parts[2])
-
-       if last_file != "@@@":
-          sortOutOcr(stub,img_type,ocr_chars,ocr_words,width,height)
-          ocr_words = ocr_chars = []
 
     if len(file_parts) == 5:
        is_char = True

@@ -516,6 +516,8 @@ for img_name in img_source:
           tmp_squares = sorted(pg_squares, key=lambda seg: seg.y0)
           #now sort from left to right
           pg_squares = sorted(tmp_squares, key=lambda seg: seg.x0)
+          #we don't need this for olena
+          options.line_gap = 0 
 
     api=tesseract.TessBaseAPI()
     api.SetOutputName("outputName")

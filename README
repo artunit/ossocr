@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: November 2012
+Last Revised: December 2012
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
