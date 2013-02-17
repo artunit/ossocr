@@ -54,6 +54,7 @@ class OCR_Char:
 
 class box_Entry:
     def __init__(self, box_str):
+        # print "box_str", box_str
         tmp = box_str.split('_', 4)
         self.x0 = int(tmp[0])
         self.y0 = int(tmp[1])
@@ -131,7 +132,8 @@ def deDupChars(ocr_chars):
               if ocr_char.x1 == -1:
                  if ocr_char.y1 == -1:
                     unique = False
-                    box_info.append(box_Entry(ocr_char.ocr_char))
+                    if len(ocr_char.ocr_char) > 0:
+                       box_info.append(box_Entry(ocr_char.ocr_char))
         if i > 0 and unique is True:
            if ocr_char.x0 in range(ocr_chars[i].x0 - 1, ocr_chars[i].x0 + 1):
               if ocr_char.y0 == range(ocr_chars[i].y0 - 1, ocr_chars[i].y0 + 1):
@@ -385,10 +387,13 @@ last_file = "@@@"
 for line in file:
     line = line.strip()
     fileinfo, char_or_word, x0, y0, x1, y1 = line.split(' ', 6)
+    # print "line", line
+    # print "x0", x0
        
     utf_char_or_word = None
     try:
-        utf_char_or_word = char_or_word.encode('utf-8',errors='strict')
+        #utf_char_or_word = char_or_word.encode('utf-8',errors='strict')
+        utf_char_or_word = char_or_word.encode('utf-8')
     except:
         utf_char_or_word = ''
 
@@ -422,25 +427,26 @@ for line in file:
        is_word = True
 
     x0 = int(x0)
-    y0 = hocr_y0 = int(y0)
+    y0 = int(y0)
     x1 = int(x1)
-    y1 = hocr_y1 = int(y1)
+    y1 = int(y1)
        
-    is_space = False
-    if (x0 + y0 + x1 + y1) == 0:
-       is_space = True
+    if x0 >= 0 and y0 >= 0 and x1 >= 0 and y1 >= 0:
+       is_space = False
+       if (x0 + y0 + x1 + y1) == 0:
+          is_space = True
 
-    if is_char is True and not is_space:
-       ocr_chars.append(OCR_Char(utf_char_or_word,x0,y0,x1,y1))
+       if is_char is True and not is_space:
+          ocr_chars.append(OCR_Char(utf_char_or_word,x0,y0,x1,y1))
 
-    if len(utf_char_or_word) > 0 and is_word is True and len(utf_char_or_word.strip()) > 0:
-       ocr_words.append(hOCR_Word(utf_char_or_word,x0,y0,x1,y1))
+       if len(utf_char_or_word) > 0 and is_word is True and len(utf_char_or_word.strip()) > 0:
+          ocr_words.append(hOCR_Word(utf_char_or_word,x0,y0,x1,y1))
 
-    if (x0 + y0 + x1 + y1) > 0:
-       tcx0 = x0
-       tcy0 = y0
-       tcx1 = x1
-       tcy1 = y1
+       if (x0 + y0 + x1 + y1) > 0:
+          tcx0 = x0
+          tcy0 = y0
+          tcx1 = x1
+          tcy1 = y1
 
     last_file = stub
        

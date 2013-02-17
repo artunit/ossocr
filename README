@@ -1,5 +1,5 @@
 README – Created: April 2011
-Last Revised: December 2012
+Last Revised: February 2013
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
@@ -23,7 +23,7 @@ main_dummy.h.patch
 tesseract.i.patch
 
 Assuming you have the svn versions of tesseract (last used on tesseract 
-version 806), and python-tesseract (version 100), patching would be a process like:
+version 825), and python-tesseract (version 100), patching would be a process like:
 
 # for tesseract
 patch -p1 api/baseapi.h < /patches/baseapi.h.patch
