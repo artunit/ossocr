@@ -7,8 +7,11 @@ sortout.py - take hadoop output and create derivative files
 (c) Copyright GNU General Public License (GPL)
 """
 
-import sys
+from xml.dom import minidom
 from copy import deepcopy
+from xml.etree import ElementTree
+from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+import sys
 
 class hOCR_Column:
     def __init__(self, paras, x0, y0, x1, y1):
@@ -77,12 +80,11 @@ def hocrfooter(hocrfile):
     hocrfile.write("</body>\n")
     hocrfile.write("</html>\n")
 
-def xmlheader(xmlfile):
-    xmlfile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    xmlfile.write("<words>\n")
-
-def xmlfooter(xmlfile):
-    xmlfile.write("</words>")
+def cleanprint(elem):
+    # see http://renesd.blogspot.com/2007/05/pretty-print-xml-with-python.html
+    utf_string = ElementTree.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(utf_string)
+    return reparsed.toprettyxml(indent="  ")
 
 def writehOcr(pgname,page_x0,page_y0,page_x1,page_y1,columns,hocr_file):
     word_count = line_count = column_count = para_count = 0
@@ -214,20 +216,21 @@ def sortOutOcr(stub,img_type,inocr_chars,inocr_words,width,height):
     non_unique_words, non_unique_words_hocr = deDupWords(ocr_words)
     ocr_words = inocr_words
 
+
     if len(ocr_chars) > 0:
-       xml_file = open(stub + ".xml", 'w')
-       xmlheader(xml_file)
+       xml_file = open(stub + ".xml", 'wb')
+       words = Element('words')
+       tests = Element('tests')
        for pg_col in pg_cols:
            for ocr_word in ocr_words:
                if hasattr(ocr_word,'hocr_word') and len(ocr_word.hocr_word.strip()) > 0:
                   if ocr_word.x0 >= pg_col.x0 and ocr_word.y0 >= pg_col.y0:
                      if ocr_word.x1 <= pg_col.x1 and ocr_word.y1 <= pg_col.y1:
                         if checkForDups(ocr_word,non_unique_words) is False:
-                           xml_file.write("<word x1=\"%d\" y1=\"%d\">\n" % (ocr_word.x0,ocr_word.y0))
-                           xml_file.write("%s\n" % (ocr_word.hocr_word))
-                           xml_file.write("<ends x2=\"%d\" y2=\"%d\"/>\n" % (ocr_word.x1,ocr_word.y1))
-                           xml_file.write("</word>\n")
-       xmlfooter(xml_file)
+                           word = SubElement(words, 'word',{'x1':str(ocr_word.x0),'y1':str(ocr_word.y0),})
+                           word.text = ocr_word.hocr_word
+                           ends = SubElement(word,'ends',{'x2':str(ocr_word.x1),'y2':str(ocr_word.y1),})
+       xml_file.write(cleanprint(words))
        xml_file.close()
 
        if options.box is True:
@@ -246,7 +249,6 @@ def sortOutOcr(stub,img_type,inocr_chars,inocr_words,width,height):
           hocr_file = open(stub + ".html", 'w')
 
           for pg_col in pg_cols:
-
               x0 = y0 = x1 = y1 = 0
               tcx0 = tcy0 = tcx1 = tcy1 = 0
               line_left_x = line_left_y = 0
@@ -436,7 +438,7 @@ for line in file:
        if (x0 + y0 + x1 + y1) == 0:
           is_space = True
 
-       if is_char is True and not is_space:
+       if len(utf_char_or_word) > 0 and is_char is True and not is_space:
           ocr_chars.append(OCR_Char(utf_char_or_word,x0,y0,x1,y1))
 
        if len(utf_char_or_word) > 0 and is_word is True and len(utf_char_or_word.strip()) > 0:
