@@ -399,19 +399,17 @@ for line in file:
     except:
         utf_char_or_word = ''
 
-    file_parts = fileinfo.split('_')
-    file_str = file_parts[0]
-
     #if the file is a URL, get name after last slash
-    if file_str.startswith('http'):
-       last_slash = file_str.rfind('/')
+    if fileinfo.startswith('http'):
+       last_slash = fileinfo.rfind('/')
        if last_slash > -1:
           last_slash+=1
-          file_str = file_str[last_slash:]
+          fileinfo = fileinfo[last_slash:]
+
+    file_parts = fileinfo.split('_')
+    file_str = file_parts[0]
     stub, img_type = file_str.split(".",1)
 
-    #print "last_file", last_file
-    #print "stub",stub
     if stub != last_file:
        if last_file != "@@@":
           #print "now stub", stub
