@@ -1,9 +1,9 @@
 README – Created: April 2011
-Last Revised: February 2013
+Last Revised: April 2013
 
 I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
 for OCR processing, with the very handy python-tesseract 
-<http://code.google.com/p/python-tesseract/> for pulling it all together.
+<http://code.google.com/p/python-tesseract/> as a model for pulling it all together.
 
 The main target has been newspaper images, which seems to stretch the limits of 
 OCR software and there is some patching to increase parameters that
@@ -17,25 +17,17 @@ versions of the application. The patches that are in use now are:
 baseapi.h.patch
 baseapi.cpp.patch
 
-# for python-tesseract
-main_dummy.cpp.patch
-main_dummy.h.patch
-tesseract.i.patch
-
-Assuming you have the svn versions of tesseract (last used on tesseract 
-version 825), and python-tesseract (version 100), patching would be a process like:
+Assuming you have the svn version of tesseract (last used on tesseract 
+version 835), patching would be a process like:
 
 # for tesseract
 patch -p1 api/baseapi.h < /patches/baseapi.h.patch
 patch -p1 api/baseapi.cpp < /patches/baseapi.cpp.patch
 
-# for python-tesseract
-patch -p1 main_dummy.cpp < /patches/main_dummy.cpp.patch
-patch -p1 main_dummy.h < /patches/main_dummy.h.patch
-patch -p1 tesseract.i < /patches/tesseract.i.patch
-
-Note that tesseract now uses "tesseract" instead of "tesseract_api"
-for the library name.
+The original patches for python-tesseract are still included here but the
+code used now is in the python-tesseract-mods directory. The "buildall"
+and "cleanall" scripts create the "_tesseract.so" to be added to the
+python library.
 
 The main python application (ossocr.py) has several parameters for standalone
 processing, but is set up by default for hadoop stream processing. For
@@ -105,25 +97,26 @@ $lenresult = tesseract::ExtractResultsWrapper($api, "coords.txt", strlen($result
 The php option is useful for Drupal environments and any of the many other spaces
 where php is the hammer of choice.
 
-It is still unclear what the optimum image processing should be for the most effective 
-OCR, I have added some box support for dealing with what may be the most horrific example, 
-which is newspaper scanned from microfilm and fiche. Tesseract seems to produce better 
-results when a newspaper page is broken up into columns/sections, and then having each processed 
-independently. 
+It is still unclear what the optimum image processing should be for the most 
+effective OCR, I have added some box support for dealing with what may be the 
+most horrific example, which is newspaper scanned from microfilm and fiche. Tesseract 
+seems to produce better results when a newspaper page is broken up into 
+columns/sections, and then having each processed independently. 
 
-I have used the Line Segment Detector <http://www.ipol.im/pub/algo/gjmr_line_segment_detector/>
-to identify "lines" in a page, and then cut up the page based on that. This is tricky with
-microform images since they are often skewed, but it generally leads to better OCR. The
-Detector is typically invoked as a command line:
+I have used the Line Segment Detector 
+<http://www.ipol.im/pub/algo/gjmr_line_segment_detector/>
+to identify "lines" in a page, and then cut up the page based on that. This is 
+tricky with microform images since they are often skewed, but it generally leads to 
+better OCR. The Detector is typically invoked as a command line:
 
 lsd newspaper_microfilm.pgm newspaper_microfilm.txt
 
-where the results are placed in "newspaper_microfilm.txt" in this example. In hadoop mode,
-the ossocr.py script will look for a file with a ".txt" extension and try to use it to
-determine lines and squares on a page. Otherwise, there are several parameters for 
-lines support. There are other line detection options, including within the tesseract
-code base, but the Line Segment Detector is usually quite effective for almost any
-image that uses lines for column identification. 
+where the results are placed in "newspaper_microfilm.txt" in this example. In 
+hadoop mode, the ossocr.py script will look for a file with a ".txt" extension 
+and try to use it to determine lines and squares on a page. Otherwise, there are 
+several parameters for lines support. There are other line detection options, 
+including within the tesseract code base, but the Line Segment Detector is usually 
+quite effective for almost any image that uses lines for column identification. 
 
 The "wcols.py" script is a simple attempt to identify columns that are not
 based on lines, like the line segment application described below. The results

@@ -1,0 +1,72 @@
+#!/bin/sh
+
+tesseract_inst=""
+leptonica_inst=""
+python_inc=""
+python_exe=""
+
+echo "searching for Tesserac-ocr 3.00 instalation..."
+if [ -f /usr/include/tesseract/baseapi.h ]; then
+    tesseract_inst=/usr
+    echo "...ok"
+elif [ -f /usr/local/include/tesseract/baseapi.h ]; then
+    tesseract_inst=/usr/local
+    echo "...ok"
+else
+    echo "Tesseract 3.00 instalation was not found!"
+    break
+fi
+
+echo "searching for Leptonica instalation..."
+if [ -f /usr/include/leptonica/allheaders.h ]; then
+    leptonica_inst=/usr
+    echo "...ok"
+elif [ -f /usr/local/include/leptonica/allheaders.h ]; then
+    leptonica_inst=/usr/local
+    echo "...ok"
+else
+    echo "Leptonica instalation was not found!"
+    break
+fi
+
+echo "searching for Python instalation..."
+if [ -f /usr/include/python2.7/Python.h ]; then
+    python_inc=/usr/include/python2.7/
+    python_exe="python2.7"
+    echo "...ok"
+elif [ -f /usr/include/python2.6/Python.h ]; then
+    python_inc=/usr/include/python2.6/ 
+    python_exe="python2.6"
+    echo "...ok"
+elif [ -f /usr/include/python3.2/Python.h ]; then
+    python_inc=/usr/include/python3.2/
+    python_exe="python3.1"
+    echo "...ok"
+elif [ -f /usr/include/python3.1/Python.h ]; then
+    python_inc=/usr/include/python3.1/
+    python_exe="python3.1"
+    echo "...ok"
+elif [ -f /usr/include/python3.0/Python.h ]; then
+    python_inc=/usr/include/python3.0/
+    python_exe="python3.0"
+    echo "...ok"
+else
+    echo "Python instalation was not found!"
+    break
+fi
+
+echo "running swig"
+swig -c++ -python -I. -I$tesseract_inst/include/tesseract/ -I$leptonica_inst/include/leptonica -I/usr/include -I/usr/local/include tesseract.i
+echo "compling wrap"
+gcc -c -fpic tesseract_wrap.cxx -o tesseract_wrap.o -I $leptonica_inst/include/leptonica -I $tesseract_inst/include/tesseract/ -I /usr/include -I /usr/local/include -I $python_inc 
+echo "compling dummy"
+gcc -c -fpic main_dummy.cpp -o main_dummy.o  -I. -I $tesseract_inst/include/tesseract/ -I $leptonica_inst/include/leptonica
+#echo "compling main"
+#gcc -c -fpic tesseractmain.cpp -o tesseractmain.o -I /usr/include/tesseract/ 
+echo "build library"
+gcc -shared main_dummy.o tesseract_wrap.o -o _tesseract.so -lstdc++ -ltesseract -llept -L/usr/local/lib/ -L/usr/lib/
+
+echo "testing 1"
+$python_exe tesseract.py
+echo "testing 2"
+$python_exe test.py
