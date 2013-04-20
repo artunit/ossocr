@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#set these to your environment
+scribo=/olena-2.0/scribo
+milena=/olena-2.0/milena
+graphics_magick=/usr/include/GraphicsMagick
+python_include=/usr/include/python2.7
+
+#script will detect these
+usr_include=""
+usr_local_include=""
+usr_lib=""
+usr_local_lib=""
+
+if [ -d /usr/include ]; then
+    usr_include=/usr/include
+fi
+
+if [ -d /usr/local/include ]; then
+    usr_local_include=/usr/local/include
+fi
+
+if [ -d /usr/lib ]; then
+    usr_lib=/usr/lib
+fi
+
+if [ -d /usr/local/lib ]; then
+    usr_local_lib=/usr/local/lib
+fi
+
+echo "running swig"
+swig -c++ -python -I. -I$scribo -I$milena -I$graphics_magick olena_hdlac.i
+
+echo "compling wrap"
+gcc -c -fpic olena_hdlac_wrap.cxx -o olena_hdlac_wrap.o  -I. -I $scribo -I $milena -I $graphics_magick -I $usr_include -I $usr_local_include -I $python_include
+
+echo "compling dummy"
+gcc -DHAVE_CONFIG_H -c -fpic main_dummy.cpp -o main_dummy.o -I. -I $scribo -I $milena -I $graphics_magick -DNDEBUG -O2 -pipe 
+
+echo "build library"
+gcc -shared main_dummy.o olena_hdlac_wrap.o -o _olena_hdlac.so -lstdc++ -L $usr_lib -L $usr_local_lib -lpthread -lGraphicsMagick++ -lGraphicsMagick
+
+echo "testing"
+python test.py

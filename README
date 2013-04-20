@@ -130,6 +130,9 @@ is now support for utilizing Olena via the PAGE format
 Olena produces. Like using the Line Segment Detector, the ossocr.py script
 will look for a file with a ".xml" extension.
 
+The "python-olena-hdlac" directory contains a swig project for using the olena
+hdlac tool, this is really useful for newspaper scans.
+
 The success of the OCR depends almost entirely on the image being processed. In
 general, the contrast between the text and the background media seem to be the key
 parameters, scanning pages directly from analogue sources may not require much
