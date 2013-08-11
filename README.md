@@ -1,9 +1,11 @@
-README – Created: April 2011
-Last Revised: August 2013
+README
+======
 
-I have been working through using tesseract <http://code.google.com/p/tesseract-ocr/>
-for OCR processing, with the very handy python-tesseract 
-<http://code.google.com/p/python-tesseract/> as a model for pulling it all together.
+– Created: April 2011/Last Revised: April 2013
+
+I have been working through using [tesseract] (http://code.google.com/p/tesseract-ocr/)
+for OCR processing, with the very handy [python-tesseract] 
+(http://code.google.com/p/python-tesseract/) as a model for pulling it all together.
 
 The main target has been newspaper images, which seems to stretch the limits of 
 OCR software and there is some patching to increase parameters that
@@ -13,14 +15,16 @@ functionality.
 The links above include the documentation for the SVN and development
 versions of the application. The patches that are in use now are:
 
-# for tesseract
-baseapi.h.patch
-baseapi.cpp.patch
+_for tesseract_
+*   baseapi.h.patch
+*   baseapi.cpp.patch
+*   capi.h.patch
+*   capi.cpp.patch
 
 Assuming you have the svn version of tesseract (last used on tesseract 
 version 866), patching would be a process like:
 
-# for tesseract
+_for tesseract_
 
 ```
 patch -p1 api/baseapi.h < /patches/baseapi.h.patch
@@ -38,16 +42,20 @@ The main python application (ossocr.py) has several parameters for standalone
 processing, but is set up by default for hadoop stream processing. For
 standalone and testing, you probably want something like this:
 
+```
 python ossocr.py -c True -l eng -f page.jpg
+```
 
 where:
 
+```
 -c
     write coordinate information ("coords.xml" file is created)
 -f
     specify input file, use for standalone, non-hadoop processing
 -l
     tesseract language code
+```
 
 By default for standalone, the raw OCR goes to a file called "ocr.txt" 
 but this can be changed with the -o parameter.
@@ -88,7 +96,7 @@ the coordinates of each word, and, optionally, a box file for coordinates as wel
 as an hOCR file. The pixel gaps to define a new column and line can be set as 
 parameters.
 
-Like python-tesseract, php-tesseract uses swig <http://www.swig.org/> to
+Like python-tesseract, php-tesseract uses [swig] (http://www.swig.org/) to
 expose tesseract functions to php. The buildall script will 
 try to create all of the components but the resulting library
 (tesseract.so) will need to be referenced in the appropriate php.ini
@@ -114,8 +122,8 @@ most horrific example, which is newspaper scanned from microfilm and fiche. Tess
 seems to produce better results when a newspaper page is broken up into 
 columns/sections, and then having each processed independently. 
 
-I have used the Line Segment Detector 
-<http://www.ipol.im/pub/algo/gjmr_line_segment_detector/>
+I have used the [Line Segment Detector] 
+(http://www.ipol.im/pub/algo/gjmr_line_segment_detector/)
 to identify "lines" in a page, and then cut up the page based on that. This is 
 tricky with microform images since they are often skewed, but it generally leads to 
 better OCR. The Detector is typically invoked as a command line:
@@ -136,10 +144,10 @@ based on lines, like the line segment application described below. The results
 are disappointing for slanted images, but I include the script in case it
 might be useful to someone else.
 
-The most impressive image manipulation is available via the Olena
-project <http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome/>, there
-is now support for utilizing Olena via the PAGE format 
-<http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/> which
+The most impressive image manipulation is available via the [Olena
+project] (http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome/), there
+is now support for utilizing Olena via the [PAGE format] 
+(http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/) which
 Olena produces. Like using the Line Segment Detector, the ossocr.py script
 will look for a file with a ".xml" extension.
 
@@ -153,4 +161,4 @@ manipulation.
 
 This is a work in progress, comments and suggestions welcome. 
 
-art rhyno <http://projectconifer.ca>
+art rhyno [Project Conifer] (http://projectconifer.ca)
