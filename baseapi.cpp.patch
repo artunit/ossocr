@@ -1,6 +1,6 @@
---- ../baseapi.cpp	2012-04-11 20:51:36.151211384 -0400
-+++ baseapi.cpp	2012-04-11 20:38:29.983244934 -0400
-@@ -1498,16 +1498,19 @@
+--- api/baseapi.cpp	2013-08-11 18:47:49.956059431 -0400
++++ /tmp/change/baseapi.cpp	2013-08-11 18:46:28.652057595 -0400
+@@ -1591,26 +1591,29 @@
  }
  
  /** Sets Dict::letter_is_okay_ function to point to the given function. */
@@ -20,7 +20,10 @@
  void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
    if (tesseract_ != NULL) {
      tesseract_->getDict().probability_in_context_ = f;
-@@ -1518,6 +1521,7 @@
+-    // Set it for the sublangs too.
+     int num_subs = tesseract_->num_sub_langs();
+     for (int i = 0; i < num_subs; ++i) {
+       tesseract_->get_sub_lang(i)->getDict().probability_in_context_ = f;
      }
    }
  }
@@ -28,12 +31,14 @@
  
  /** Sets Wordrec::fill_lattice_ function to point to the given function. */
  void TessBaseAPI::SetFillLatticeFunc(FillLatticeFunc f) {
-@@ -1946,8 +1950,10 @@
+@@ -2042,8 +2045,12 @@
  
    TESS_CHAR(float _cost, const char *repr, int len = -1) : cost(_cost) {
      length = (len == -1 ? strlen(repr) : len);
 -    unicode_repr = new char[length + 1];
 -    strncpy(unicode_repr, repr, length);
++    //unicode_repr = new char[length + 1];
++    //strncpy(unicode_repr, repr, length);
 +    if (length > 0) {
 +      unicode_repr = new char[length + 1];
 +      strncpy(unicode_repr, repr, length);
@@ -41,7 +46,7 @@
    }
  
    TESS_CHAR() {  // Satisfies ELISTIZE.
-@@ -1980,29 +1986,92 @@
+@@ -2076,29 +2083,56 @@
   * and the bounding boxes of the characters.
   */
  static void extract_result(TESS_CHAR_IT* out,
@@ -56,43 +61,11 @@
 +                           int chars_length) {
 +
 +  char buf[100];
-+  //PAGE_RES* tmp_res;
-+
-+  //tmp_res = page_res;
 +  int cnt = 0;
    int word_count = 0;
 -  while (page_res_it.word() != NULL) {
 +
-+  //we need to figure out how many characters are in OCR
-+  //and tmp_res->char_count is often wrong because of spacing
-+  /*
-+  PAGE_RES_IT tmppage_res_it(tmp_res);
-+  while (tmppage_res_it.word() != NULL) {
-+    WERD_RES *word = tmppage_res_it.word();
-+    const char *str = word->best_choice->unichar_string().string();
-+    const char *len = word->best_choice->unichar_lengths().string();
-+
-+    int n = strlen(len);
-+    cnt+=n;
-+    if (word_count)
-+       cnt++;
-+    tmppage_res_it.forward();
-+    word_count++;
-+  }
-+  */
-+  
-+  //an entry for every char
-+/*
-+  *char_4_coords = new char[chars_length];
-+  *char_x0 = new int[chars_length];
-+  *char_y0 = new int[chars_length];
-+  *char_x1 = new int[chars_length];
-+  *char_y1 = new int[chars_length];
-+*/
-+   
 +  PAGE_RES_IT page_res_it(page_res);
-+  word_count = 0;
-+  cnt = 0;
 +  while (page_res_it.word() != NULL && cnt < chars_length) {
      WERD_RES *word = page_res_it.word();
      const char *str = word->best_choice->unichar_string().string();
@@ -115,17 +88,13 @@
        TESS_CHAR *tc = new TESS_CHAR(rating_to_cost(word->best_choice->rating()),
                                      str, *len);
        tc->box = real_rect.intersection(word->box_word->BlobBox(i));
-+    
++
 +      (*char_4_coords)[cnt] = tc->unicode_repr[0];
 +      (*char_x0)[cnt] = tc->box.left();
 +      (*char_y0)[cnt] = tc->box.bottom();
 +      (*char_x1)[cnt] = tc->box.right();
 +      (*char_y1)[cnt] = tc->box.top();
-+      /*
-+      printf("new track: %d = %c: %d %d %d %d\n",cnt,(*char_4_coords)[cnt],(*char_x0)[cnt],
-+        (*char_y0)[cnt],(*char_x1)[cnt],(*char_y1)[cnt]);
-+      */
-+        
++
        out->add_after_then_move(tc);
 -       str += *len;
 +      str += *len;
@@ -133,7 +102,7 @@
        len++;
 -    }
 +    }//for
-+   
++
 +    (*char_4_coords)[cnt] = '\0';
      page_res_it.forward();
      word_count++;
@@ -142,7 +111,7 @@
  }
  
  /**
-@@ -2016,10 +2085,19 @@
+@@ -2112,10 +2146,19 @@
                                          int** y0,
                                          int** x1,
                                          int** y1,
@@ -164,17 +133,3 @@
    tess_chars_it.move_to_first();
    int n = tess_chars.length();
    int text_len = 0;
-@@ -2036,11 +2114,12 @@
-     TESS_CHAR *tc = tess_chars_it.data();
-     text_len += (*lengths)[i] = tc->length;
-     (*costs)[i] = tc->cost;
-+    //these coordinates seem to go astray but leave them alone
-     (*x0)[i] = tc->box.left();
-     (*y0)[i] = tc->box.bottom();
-     (*x1)[i] = tc->box.right();
-     (*y1)[i] = tc->box.top();
--  }
-+  }//for
-   char *p = *text = new char[text_len];
- 
-   tess_chars_it.move_to_first();

@@ -1,6 +1,6 @@
---- ../baseapi.h	2012-04-11 20:51:41.347210922 -0400
-+++ baseapi.h	2012-04-11 20:38:35.575243158 -0400
-@@ -70,7 +70,9 @@
+--- api/baseapi.h	2013-08-11 18:47:49.960059431 -0400
++++ /tmp/change/baseapi.h	2013-08-11 18:46:40.420057861 -0400
+@@ -71,7 +71,9 @@
  
  class CubeRecoContext;
  class Dawg;
@@ -11,7 +11,7 @@
  class EquationDetect;
  class LTRResultIterator;
  class MutableIterator;
-@@ -78,6 +80,7 @@
+@@ -79,6 +81,7 @@
  class Trie;
  class Wordrec;
  
@@ -19,7 +19,7 @@
  typedef int (Dict::*DictFunc)(void* void_dawg_args,
                                UNICHAR_ID unichar_id, bool word_end) const;
  typedef double (Dict::*ProbabilityInContextFunc)(const char* lang,
-@@ -85,6 +88,7 @@
+@@ -86,6 +89,7 @@
                                                   int context_bytes,
                                                   const char* character,
                                                   int character_bytes);
@@ -27,7 +27,7 @@
  typedef void (Wordrec::*FillLatticeFunc)(const MATRIX &ratings,
                                           const LIST &best_choices,
                                           const UNICHARSET &unicharset,
-@@ -583,12 +587,12 @@
+@@ -587,12 +591,12 @@
    bool GetTextDirection(int* out_offset, float* out_slope);
  
    /** Sets Dict::letter_is_okay_ function to point to the given function. */
@@ -42,17 +42,17 @@
  
    /** Sets Wordrec::fill_lattice_ function to point to the given function. */
    void SetFillLatticeFunc(FillLatticeFunc f);
-@@ -735,6 +739,9 @@
-   /** After text is recognized, break each paragraph into blocks. */
-   TESS_LOCAL void DetectParagraphs(int debug_level);
+@@ -738,6 +742,9 @@
+   //// paragraphs.cpp ////////////////////////////////////////////////////
+   TESS_LOCAL void DetectParagraphs(bool after_text_recognition);
  
-+ public:
-+  PAGE_RES*         page_res_;        ///< The page-level data.
++  public:
++   PAGE_RES*         page_res_;        ///< The page-level data.
 +
    /**
     * Extract the OCR results, costs (penalty points for uncertainty),
     * and the bounding boxes of the characters.
-@@ -746,12 +753,18 @@
+@@ -749,7 +756,13 @@
                                      int** y0,
                                      int** x1,
                                      int** y1,
@@ -67,13 +67,7 @@
  
    TESS_LOCAL const PAGE_RES* GetPageRes() const {
      return page_res_;
-   };
--  /* @} */
-+
- 
-  protected:
-   Tesseract*        tesseract_;       ///< The underlying data object.
-@@ -760,7 +773,7 @@
+@@ -763,7 +776,7 @@
    ImageThresholder* thresholder_;     ///< Image thresholding module.
    GenericVector<ParagraphModel *>* paragraph_models_;
    BLOCK_LIST*       block_list_;      ///< The page layout.

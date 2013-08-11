@@ -1,0 +1,24 @@
+--- api/capi.h	2013-08-11 18:47:49.956059431 -0400
++++ /tmp/change/capi.h	2013-08-11 18:47:07.396058471 -0400
+@@ -37,8 +37,8 @@
+ typedef tesseract::PageSegMode TessPageSegMode;
+ typedef tesseract::ImageThresholder TessImageThresholder;
+ typedef tesseract::PageIteratorLevel TessPageIteratorLevel;
+-typedef tesseract::DictFunc TessDictFunc;
+-typedef tesseract::ProbabilityInContextFunc TessProbabilityInContextFunc;
++//typedef tesseract::DictFunc TessDictFunc;
++//typedef tesseract::ProbabilityInContextFunc TessProbabilityInContextFunc;
+ typedef tesseract::FillLatticeFunc TessFillLatticeFunc;
+ typedef tesseract::Dawg TessDawg;
+ typedef tesseract::TruthCallback TessTruthCallback;
+@@ -200,8 +200,8 @@
+ TESS_API BOOL  TESS_CALL TessBaseAPIGetTextDirection(TessBaseAPI* handle, int* out_offset, float* out_slope);
+ 
+ #ifdef TESS_CAPI_INCLUDE_BASEAPI
+-TESS_API void  TESS_CALL TessBaseAPISetDictFunc(TessBaseAPI* handle, TessDictFunc f);
+-TESS_API void  TESS_CALL TessBaseAPISetProbabilityInContextFunc(TessBaseAPI* handle, TessProbabilityInContextFunc f);
++//TESS_API void  TESS_CALL TessBaseAPISetDictFunc(TessBaseAPI* handle, TessDictFunc f);
++//TESS_API void  TESS_CALL TessBaseAPISetProbabilityInContextFunc(TessBaseAPI* handle, TessProbabilityInContextFunc f);
+ TESS_API void  TESS_CALL TessBaseAPISetFillLatticeFunc(TessBaseAPI* handle, TessFillLatticeFunc f);
+ TESS_API BOOL  TESS_CALL TessBaseAPIDetectOS(TessBaseAPI* handle, OSResults* results);
+ 

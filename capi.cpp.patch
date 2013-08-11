@@ -1,0 +1,28 @@
+--- api/capi.cpp	2013-08-11 18:47:49.956059431 -0400
++++ /tmp/change/capi.cpp	2013-08-11 18:46:49.784058073 -0400
+@@ -367,6 +367,7 @@
+     return handle->GetTextDirection(out_offset, out_slope) ? TRUE : FALSE;
+ }
+ 
++/*
+ TESS_API void TESS_CALL TessBaseAPISetDictFunc(TessBaseAPI* handle, TessDictFunc f)
+ {
+     handle->SetDictFunc(f);
+@@ -376,6 +377,7 @@
+ {
+     handle->SetProbabilityInContextFunc(f);
+ }
++*/
+ 
+ TESS_API BOOL TESS_CALL TessBaseAPIDetectOS(TessBaseAPI* handle, OSResults* results)
+ {
+@@ -532,7 +534,8 @@
+ 
+ TESS_API TessResultIterator* TESS_CALL TessResultIteratorCopy(const TessResultIterator* handle)
+ {
+-    return new TessResultIterator(*handle);
++    //return new TessResultIterator(*handle);
++    return static_cast<TessResultIterator*>(new TessPageIterator(*handle));
+ }
+ 
+ TESS_API TessPageIterator* TESS_CALL TessResultIteratorGetPageIterator(TessResultIterator* handle)
