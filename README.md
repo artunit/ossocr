@@ -145,7 +145,7 @@ are disappointing for slanted images, but I include the script in case it
 might be useful to someone else.
 
 The most impressive image manipulation is available via the [Olena
-project] (http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome/), there
+project] (http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome), there
 is now support for utilizing Olena via the [PAGE format] 
 (http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/) which
 Olena produces. Like using the Line Segment Detector, the ossocr.py script
