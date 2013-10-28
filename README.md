@@ -1,7 +1,7 @@
 README
 ======
 
-– Created: April 2011/Last Revised: April 2013
+– Created: April 2011/Last Revised: Oct. 2013
 
 I have been working through using [tesseract] (http://code.google.com/p/tesseract-ocr/)
 for OCR processing, with the very handy [python-tesseract] 
@@ -22,7 +22,7 @@ _for tesseract_
 *   capi.cpp.patch
 
 Assuming you have the svn version of tesseract (last used on tesseract 
-version 866), patching would be a process like:
+version 895), patching would be a process like:
 
 _for tesseract_
 
@@ -150,6 +150,9 @@ is now support for utilizing Olena via the [PAGE format]
 (http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/) which
 Olena produces. Like using the Line Segment Detector, the ossocr.py script
 will look for a file with a ".xml" extension.
+
+The [Olena Reference Documentation] (http://teamcity.lrde.epita.fr/repository/download/bt13/.lastSuccessful/olena.doc/index.html) 
+is a good starting point, you can log in as guest to access it.
 
 The "python-olena-hdlac" directory contains a swig project for using the olena
 hdlac tool, this is really useful for newspaper scans.
