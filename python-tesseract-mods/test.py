@@ -6,7 +6,8 @@ import ctypes
 import os
 api = tesseract.TessBaseAPI()
 api.SetOutputName("outputName");
-api.Init(".","eng",tesseract.OEM_DEFAULT)
+tessdatapath = os.getenv('TESSDATA_PREFIX', '/usr/local/share')
+api.Init(tessdatapath,"eng",tesseract.OEM_DEFAULT)
 api.SetPageSegMode(tesseract.PSM_AUTO)
 mImgFile = "eurotext.jpg"
 

@@ -1,7 +1,0 @@
---- ../main_dummy.h	2012-04-11 20:34:20.611253527 -0400
-+++ main_dummy.h	2012-04-11 20:34:27.631253241 -0400
-@@ -5,3 +5,4 @@
- char* ProcessPagesFileStream(const char* image,tesseract::TessBaseAPI* api);
- char* ProcessPagesBuffer(char* buffer, int fileLen, tesseract::TessBaseAPI* api);
- char* ProcessPagesRaw(const char* image,tesseract::TessBaseAPI* api);
-+int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile, int chars_length, char* chars_limit);

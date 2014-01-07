@@ -22,7 +22,7 @@ _for tesseract_
 *   capi.cpp.patch
 
 Assuming you have the svn version of tesseract (last used on tesseract 
-version 895), patching would be a process like:
+version 936), patching would be a process like:
 
 _for tesseract_
 
@@ -33,9 +33,8 @@ patch -p1 api/capi.cpp < /patches/capi.cpp.patch
 patch -p1 api/capi.h < /patches/capi.h.patch
 ```
 
-The original patches for python-tesseract are still included here but the
-code used now is in the python-tesseract-mods directory. The "buildall"
-and "cleanall" scripts create the "_tesseract.so" to be added to the
+The python-tesseract setup is in the python-tesseract-mods directory. The 
+"buildall" and "cleanall" scripts create the "_tesseract.so" to be added to the
 python library.
 
 The main python application (ossocr.py) has several parameters for standalone
@@ -164,4 +163,4 @@ manipulation.
 
 This is a work in progress, comments and suggestions welcome. 
 
-art rhyno [Project Conifer] (http://projectconifer.ca)
+art rhyno [Project Conifer] (http://ojs.uwindsor.ca/drupal)

@@ -7,12 +7,11 @@ if (!extension_loaded('tesseract')) {
 }
 $mImgFile = "eurotext.tif";
 print("hello world\n");
-# $api = TessBaseAPI::GetThresholdedImage();
 $api = new TessBaseAPI();
     
 $api->SetPageSegMode(tesseract::PSM_AUTO);
-$api->Init(".","eng",tesseract::OEM_DEFAULT);
-# $api->SetOutputName("outputName");
+$tessdatapath = getenv('TESSDATA_PREFIX');
+$api->Init($tessdatapath,"eng",tesseract::OEM_DEFAULT);
 
 print("now try to do ocr\n");
 $result=tesseract::ProcessPagesWrapper($mImgFile,$api);

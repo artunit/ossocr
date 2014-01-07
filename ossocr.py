@@ -521,7 +521,8 @@ for img_name in img_source:
 
     api=tesseract.TessBaseAPI()
     api.SetOutputName("outputName")
-    api.Init(".",options.language,tesseract.OEM_DEFAULT)
+    tessdatapath = os.getenv('TESSDATA_PREFIX', '/usr/local/share')
+    api.Init(tessdatapath,options.language,tesseract.OEM_DEFAULT)
     api.SetPageSegMode(tesseract.PSM_AUTO);
 
     if options.file:

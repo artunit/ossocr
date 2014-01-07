@@ -30,6 +30,6 @@ gcc -c -fpic tesseract_wrap.cxx -o tesseract_wrap.o -I. -I$tesseract_inst/tesser
 echo "compiling dummy"
 gcc -c -fpic main_dummy.cpp -o main_dummy.o  -I. -I$tesseract_inst/tesseract/ -I$leptonica_inst/leptonica
 echo "building library"
-gcc -shared main_dummy.o tesseract_wrap.o -o tesseract.so -lstdc++ -ltesseract -llept -L/usr/local/lib/ -L/usr/lib/
+gcc -shared main_dummy.o tesseract_wrap.o -o tesseract.so -lstdc++ -ltesseract -llept -L/usr/local/lib/ -L/usr/lib/ -lrt
 
 echo "if the above looks ok, reference tesseract.so in php.ini"

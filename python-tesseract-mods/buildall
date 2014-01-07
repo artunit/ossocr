@@ -56,15 +56,15 @@ else
 fi
 
 echo "running swig"
-swig -c++ -python -I. -I$tesseract_inst/include/tesseract/ -I$leptonica_inst/include/leptonica -I/usr/include -I/usr/local/include tesseract.i
+swig -c++ -python -I. -I$tesseract_inst/include/tesseract/ -I$leptonica_inst/include/leptonica -I/usr/include -I/usr/local/include tesseract.i 
 echo "compling wrap"
 gcc -c -fpic tesseract_wrap.cxx -o tesseract_wrap.o -I $leptonica_inst/include/leptonica -I $tesseract_inst/include/tesseract/ -I /usr/include -I /usr/local/include -I $python_inc 
 echo "compling dummy"
-gcc -c -fpic main_dummy.cpp -o main_dummy.o  -I. -I $tesseract_inst/include/tesseract/ -I $leptonica_inst/include/leptonica
+gcc -c -fpic main_dummy.cpp -o main_dummy.o  -I. -I $tesseract_inst/include/tesseract/ -I $leptonica_inst/include/leptonica 
 #echo "compling main"
 #gcc -c -fpic tesseractmain.cpp -o tesseractmain.o -I /usr/include/tesseract/ 
 echo "build library"
-gcc -shared main_dummy.o tesseract_wrap.o -o _tesseract.so -lstdc++ -ltesseract -llept -L/usr/local/lib/ -L/usr/lib/
+gcc -shared main_dummy.o tesseract_wrap.o -o _tesseract.so -lstdc++ -ltesseract -llept -L/usr/local/lib/ -L/usr/lib/ -lrt
 
 echo "testing 1"
 $python_exe tesseract.py
