@@ -159,7 +159,7 @@ char* ProcessPagesRaw(const char* image,tesseract::TessBaseAPI* api) {
  }
 
 /*
-        Special function for DiscoveryGarden and OurDigitalWorld
+	Special functions for DiscoveryGarden and OurDigitalWorld
 */
 int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile, int chars_limit, char *valid_chars) {
     char *words;
@@ -169,14 +169,72 @@ int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile, int chars_
     int *y0;
     int *x1;
     int *y1;
-    char *char_4_coords;
+    char *char_4_coords[chars_limit];
     int *char_x0;
     int *char_y0;
     int *char_x1;
     int *char_y1;
 
+    char_x0 = new int[chars_limit];
+    char_y0 = new int[chars_limit];
+    char_x1 = new int[chars_limit];
+    char_y1 = new int[chars_limit];
+
     //allocate space here, we know the number of chars at this point
-    char_4_coords = new char[chars_limit];
+    //tesseract has funky unicode representation so will accomodate
+    for (int i = 0; i < chars_limit; i++) {
+        char_4_coords[i] = new char[5];
+        char_4_coords[i][0] = '\0';
+    }
+ 
+
+    //the all important call
+    api->TesseractExtractResult(&words, &lengths, &costs,
+        &x0, &y0, &x1, &y1,char_4_coords,&char_x0,&char_y0,
+	&char_x1,&char_y1,api->page_res_, chars_limit);
+
+    FILE *coordfile = NULL;
+    coordfile = fopen(outfile, "w");
+
+    int tmp_cnt = 0;
+
+    for (int i = 0; i < chars_limit && strlen(char_4_coords[i]) > 0; i++) {
+       if (strlen(valid_chars) == 0 || strchr(valid_chars,char_4_coords[i][0]) <= 0) {
+          fprintf(coordfile,"%s %d %d %d %d\n",char_4_coords[i],char_x0[i],
+             char_y0[i],char_x1[i],char_y1[i]);
+          tmp_cnt++;
+       }//if
+    }//for
+            
+    fclose(coordfile);
+
+    return tmp_cnt;
+}
+
+char* ExtractResultsArrayWrapper(tesseract::TessBaseAPI* api, int chars_limit, char *delimit, char *valid_chars) {
+    char *buffer;
+    char *retStr;
+    char *words;
+    int *lengths;
+    float *costs;
+    int *x0;
+    int *y0;
+    int *x1;
+    int *y1;
+    char *char_4_coords[chars_limit];
+    int *char_x0;
+    int *char_y0;
+    int *char_x1;
+    int *char_y1;
+        
+
+    //allocate space here, we know the number of chars at this point
+    //tesseract has funky unicode representation so will accomodate
+    for (int i = 0; i < chars_limit; i++) {
+	char_4_coords[i] = new char[5];
+        char_4_coords[i][0] = '\0';
+    }
+
     char_x0 = new int[chars_limit];
     char_y0 = new int[chars_limit];
     char_x1 = new int[chars_limit];
@@ -184,25 +242,26 @@ int ExtractResultsWrapper(tesseract::TessBaseAPI* api, char *outfile, int chars_
 
     //the all important call
     api->TesseractExtractResult(&words, &lengths, &costs,
-        &x0, &y0, &x1, &y1,&char_4_coords,&char_x0,&char_y0,
-        &char_x1,&char_y1,api->page_res_, chars_limit);
+        &x0, &y0, &x1, &y1,char_4_coords,&char_x0,&char_y0,
+	&char_x1,&char_y1,api->page_res_, chars_limit);
 
-    FILE *coordfile = NULL;
-    coordfile = fopen(outfile, "w");
 
-    int wordsLen = strlen(char_4_coords);
-    int tmp_cnt = 0;
+    buffer=(char *)malloc(100);
+    //allocated 5 and add 4 spaces, add 1 for terminating null and double
+    retStr=(char *)malloc(20 * chars_limit);
+    strcpy(retStr,"");
 
-    for (int i = 0; i < wordsLen; i++) {
-       if (strlen(valid_chars) == 0 || strchr(valid_chars,char_4_coords[i])) {
-          fprintf(coordfile,"%c %d %d %d %d\n",char_4_coords[i],char_x0[i],
+    for (int i = 0; i < chars_limit && strlen(char_4_coords[i]) > 0; i++) {
+       if (strlen(valid_chars) == 0 || strchr(valid_chars,char_4_coords[i][0]) <= 0) {
+          if (strlen(retStr) > 0) {
+             strcat(retStr,delimit);
+          }
+          sprintf(buffer,"%s %d %d %d %d",char_4_coords[i],char_x0[i],
              char_y0[i],char_x1[i],char_y1[i]);
-          tmp_cnt++;
+          
+          strcat(retStr,buffer);
        }//if
     }//for
-
-    fclose(coordfile);
-
-    return tmp_cnt;
+            
+    return retStr;
 }
-
