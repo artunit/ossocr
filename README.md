@@ -1,7 +1,7 @@
 README
 ======
 
-– Created: April 2011/Last Revised: Oct. 2013
+– Created: April 2011/Last Revised: Jan. 2014
 
 I have been working through using [tesseract] (http://code.google.com/p/tesseract-ocr/)
 for OCR processing, with the very handy [python-tesseract] 
@@ -22,7 +22,7 @@ _for tesseract_
 *   capi.cpp.patch
 
 Assuming you have the svn version of tesseract (last used on tesseract 
-version 936), patching would be a process like:
+version 982), patching would be a process like:
 
 _for tesseract_
 
