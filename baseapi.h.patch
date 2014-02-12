@@ -1,6 +1,6 @@
---- api/baseapi.h	2013-10-28 12:21:12.272848407 -0400
-+++ /tmp/change/baseapi.h	2013-10-28 12:14:04.992837961 -0400
-@@ -63,7 +63,7 @@
+--- api/baseapi.h	2014-02-12 14:13:12.953775117 -0500
++++ /tmp/change/baseapi.h	2014-02-12 14:03:47.057750616 -0500
+@@ -62,7 +62,7 @@
  
  class CubeRecoContext;
  class Dawg;
@@ -9,7 +9,7 @@
  class EquationDetect;
  class PageIterator;
  class LTRResultIterator;
-@@ -74,6 +74,7 @@
+@@ -73,6 +73,7 @@
  class Trie;
  class Wordrec;
  
@@ -17,7 +17,7 @@
  typedef int (Dict::*DictFunc)(void* void_dawg_args,
                                UNICHAR_ID unichar_id, bool word_end) const;
  typedef double (Dict::*ProbabilityInContextFunc)(const char* lang,
-@@ -83,6 +84,7 @@
+@@ -82,6 +83,7 @@
                                                   int character_bytes);
  typedef float (Dict::*ParamsModelClassifyFunc)(
      const char *lang, void *path);
@@ -25,7 +25,7 @@
  typedef void (Wordrec::*FillLatticeFunc)(const MATRIX &ratings,
                                           const WERD_CHOICE_LIST &best_choices,
                                           const UNICHARSET &unicharset,
-@@ -630,18 +632,18 @@
+@@ -652,12 +654,12 @@
    bool GetTextDirection(int* out_offset, float* out_slope);
  
    /** Sets Dict::letter_is_okay_ function to point to the given function. */
@@ -38,25 +38,9 @@
 -  void SetProbabilityInContextFunc(ProbabilityInContextFunc f);
 +  //void SetProbabilityInContextFunc(ProbabilityInContextFunc f);
  
- 
-   /** Sets Dict::params_model_classify_ function to point to the given
-    * function.
-    */
--  void SetParamsModelClassifyFunc(ParamsModelClassifyFunc f);
-+  //void SetParamsModelClassifyFunc(ParamsModelClassifyFunc f);
- 
    /** Sets Wordrec::fill_lattice_ function to point to the given function. */
    void SetFillLatticeFunc(FillLatticeFunc f);
-@@ -683,7 +685,7 @@
-   int NumDawgs() const;
- 
-   /** Return the language used in the last valid initialization. */
--  const char* GetLastInitLanguage() const;
-+  //const char* GetLastInitLanguage() const;
- 
-   /** Returns a ROW object created from the input row specification. */
-   static ROW *MakeTessOCRRow(float baseline, float xheight,
-@@ -789,6 +791,9 @@
+@@ -802,6 +804,9 @@
    //// paragraphs.cpp ////////////////////////////////////////////////////
    TESS_LOCAL void DetectParagraphs(bool after_text_recognition);
  
@@ -66,7 +50,7 @@
    /**
     * Extract the OCR results, costs (penalty points for uncertainty),
     * and the bounding boxes of the characters.
-@@ -800,7 +805,13 @@
+@@ -813,7 +818,13 @@
                                      int** y0,
                                      int** x1,
                                      int** y1,
@@ -81,12 +65,12 @@
  
    TESS_LOCAL const PAGE_RES* GetPageRes() const {
      return page_res_;
-@@ -814,7 +825,7 @@
+@@ -828,7 +839,7 @@
    ImageThresholder* thresholder_;     ///< Image thresholding module.
    GenericVector<ParagraphModel *>* paragraph_models_;
    BLOCK_LIST*       block_list_;      ///< The page layout.
 -  PAGE_RES*         page_res_;        ///< The page-level data.
 +  //PAGE_RES*         page_res_;        ///< The page-level data.
    STRING*           input_file_;      ///< Name used by training code.
+   Pix*              input_image_;     ///< Image used for searchable PDF
    STRING*           output_file_;     ///< Name used by debug code.
-   STRING*           datapath_;        ///< Current location of tessdata.
