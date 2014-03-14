@@ -163,4 +163,4 @@ manipulation.
 
 This is a work in progress, comments and suggestions welcome. 
 
-art rhyno [Project Conifer] (http://ojs.uwindsor.ca/drupal)
+art rhyno [conifer/hackforge/ourdigitalworld] (https://github.com/artunit)
