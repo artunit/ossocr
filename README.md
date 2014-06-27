@@ -1,19 +1,48 @@
 README
 ======
 
-– Created: April 2011/Last Revised: May, 2014
+– Created: April 2011/Last Revised: June, 2014
 
 I have been working through using [tesseract] (http://code.google.com/p/tesseract-ocr/)
-for OCR processing, with the very handy [python-tesseract] 
-(http://code.google.com/p/python-tesseract/) as a model for pulling it all together.
+for OCR processing. I need coordinate information for highlighting and had originally
+used the API to extract coordinate information for characters. As of SVN version 1889
+of tesseract, I have stopped using the API and now use the hocr output option of
+tesseract since it is solid and doesn't require modifying the tesseract source code. 
 
-The main target has been newspaper images, which seems to stretch the limits of 
-OCR software and there is some patching to increase parameters that
-were problematic for this kind of material, as well as to add some addition
-functionality.
+The main python application (tessolena.py) has several parameters:
 
-The links above include the documentation for the SVN and development
-versions of the application. The patches that are in use now are:
+```
+-b
+    smallest height for box
+-c
+    write coordinates in XML ("coords.xml" file is created)
+-f
+    input file (defaults to "page.tif")
+-l
+    language for OCR (defaults to "eng")
+-g
+    specify gap value 
+-r
+    text results file (defaults to "page.txt")
+-s
+    resize squares for OCR
+-w
+    write olena boxes
+```
+
+For complex page scans, especially historical newspapers, the most impressive image 
+segmentation I have seen comes from the [Olena project] (http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome), 
+there is support for utilizing Olena via the [PAGE format] 
+(http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/) which
+Olena produces. 
+
+The [Olena Reference Documentation] (http://teamcity.lrde.epita.fr/repository/download/bt13/.lastSuccessful/olena.doc/index.html) 
+is a good starting point, you can log in as guest to access it.
+
+When I was using the API, the very handy [python-tesseract] 
+(http://code.google.com/p/python-tesseract/) was my model for pulling it all together.
+
+The patches I used for tesseract were:
 
 _for tesseract_
 *   baseapi.h.patch
@@ -21,8 +50,8 @@ _for tesseract_
 *   capi.h.patch
 *   capi.cpp.patch
 
-Assuming you have the svn version of tesseract (last used on tesseract 
-version 1093), patching would be a process like:
+Assuming you have the svn version of tesseract (up to version 1889), 
+patching would be a process like:
 
 _for tesseract_
 
@@ -37,9 +66,9 @@ The python-tesseract setup is in the python-tesseract-mods directory. The
 "buildall" and "cleanall" scripts create the "_tesseract.so" to be added to the
 python library.
 
-The main python application (ossocr.py) has several parameters for standalone
-processing, but is set up by default for hadoop stream processing. For
-standalone and testing, you probably want something like this:
+The python application (ossocr.py) associated with this has several parameters 
+for standalone processing, but is set up by default for hadoop stream processing. For
+standalone and testing, you probably want something like:
 
 ```
 python ossocr.py -c True -l eng -f page.jpg
@@ -143,15 +172,6 @@ based on lines, like the line segment application described below. The results
 are disappointing for slanted images, but I include the script in case it
 might be useful to someone else.
 
-The most impressive image manipulation is available via the [Olena
-project] (http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome), there
-is now support for utilizing Olena via the [PAGE format] 
-(http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/) which
-Olena produces. Like using the Line Segment Detector, the ossocr.py script
-will look for a file with a ".xml" extension.
-
-The [Olena Reference Documentation] (http://teamcity.lrde.epita.fr/repository/download/bt13/.lastSuccessful/olena.doc/index.html) 
-is a good starting point, you can log in as guest to access it.
 
 The "python-olena-hdlac" directory contains a swig project for using the olena
 hdlac tool, this is really useful for newspaper scans.
