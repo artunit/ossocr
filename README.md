@@ -33,7 +33,7 @@ The main python application (tessolena.py) has several parameters:
 For complex page scans, especially historical newspapers, the most impressive image 
 segmentation I have seen comes from the [Olena project] (http://www.lrde.epita.fr/cgi-bin/twiki/view/Olena/WebHome), 
 there is support for utilizing Olena via the [PAGE format] 
-(http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19/) which
+(http://schema.primaresearch.org/tools/PAGELibraries) which
 Olena produces. 
 
 The [Olena Reference Documentation] (http://teamcity.lrde.epita.fr/repository/download/bt13/.lastSuccessful/olena.doc/index.html) 
